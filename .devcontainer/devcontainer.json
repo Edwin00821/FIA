@@ -1,0 +1,34 @@
+{
+  "name": "Python 3",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "mounts": [
+    "type=bind,source=/tmp/.X11-unix,target=/tmp/.X11-unix"
+  ],
+  "runArgs": [
+    "--env",
+    "DISPLAY=${localEnv:DISPLAY}",
+    "--env",
+    "QT_X11_NO_MITSHM=1"
+  ],
+  "remoteUser": "vscode",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-toolsai.jupyter",
+        "ms-toolsai.jupyter-keymap",
+        "ms-toolsai.jupyter-renderers",
+        "charliermarsh.ruff",
+        "ms-python.isort",
+        "ms-python.black-formatter",
+        "KevinRose.vsc-python-indent",
+        "eamodio.gitlens",
+        "mhutchie.git-graph",
+        "donjayamanne.githistory"
+      ]
+    }
+  }
+}
