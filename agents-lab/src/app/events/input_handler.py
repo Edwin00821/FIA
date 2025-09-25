@@ -8,7 +8,7 @@ class InputHandler:
     """
     Manejador de entrada que convierte eventos de pygame a eventos de aplicación.
 
-    Se encarga de capturar eventos del sistema (teclado, mouse, etc.) y 
+    Se encarga de capturar eventos del sistema (teclado, mouse, etc.) y
     convertirlos a eventos de aplicación que se emiten a través del EventBus.
     """
 
@@ -25,6 +25,8 @@ class InputHandler:
         self._key_mappings: Dict[int, AppEvent] = {
             pygame.K_ESCAPE: AppEvent.EXIT,
             pygame.K_r: AppEvent.RELOAD,
+            pygame.K_e: AppEvent.EDIT_MODE_TOGGLE,
+            pygame.K_v: AppEvent.EDIT_MODE_EXIT,
         }
 
     def process_events(self) -> None:
@@ -71,9 +73,32 @@ class InputHandler:
         Args:
             key: Código de la tecla presionada
         """
+        # Verificar si es una tecla numérica
+        self._handle_number_key(key)
+        
+        # Verificar mapeos de aplicación
         app_event = self._key_mappings.get(key)
         if app_event:
             self.event_bus.emit(app_event)
+
+    def _handle_number_key(self, key: int) -> None:
+        """
+        Maneja eventos de teclas numéricas para cambio de terreno.
+
+        Args:
+            key: Código de la tecla presionada
+        """
+        # Mapeo de teclas numéricas a valores
+        number_keys = {
+            pygame.K_0: 0, pygame.K_1: 1, pygame.K_2: 2, pygame.K_3: 3,
+            pygame.K_4: 4, pygame.K_5: 5, pygame.K_6: 6, pygame.K_7: 7,
+            pygame.K_8: 8, pygame.K_9: 9
+        }
+
+        if key in number_keys:
+            terrain_value = number_keys[key]
+            self.event_bus.emit(AppEvent.TERRAIN_CHANGE,
+                                terrain_value=terrain_value)
 
     def add_key_mapping(self, key: int, event: AppEvent) -> None:
         """

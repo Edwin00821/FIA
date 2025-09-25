@@ -47,6 +47,10 @@ class CellInspector:
         self._terrain_descriptions: Dict[TerrainType, str] = {
             TerrainType.WALL: "muro u obstáculo infranqueable",
             TerrainType.ROAD: "camino o sendero transitable",
+            TerrainType.WATER: "superficie acuática navegable",
+            TerrainType.SAND: "terreno arenoso de difícil tránsito",
+            TerrainType.FOREST: "área boscosa con vegetación densa",
+            TerrainType.MOUNTAIN: "terreno montañoso de gran elevación",
         }
 
     def inspect_cell(self, map_obj: Map, coordinate: MapCoordinate) -> Optional[CellInfo]:

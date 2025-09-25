@@ -55,8 +55,13 @@ class ConfigManager:
 
         # Mapeo de tipos de terreno a colores
         self.terrain_colors: Dict[TerrainType, Tuple[int, int, int]] = {
-            TerrainType.WALL: (128, 128, 128),  # Gris para muros
-            TerrainType.ROAD: (255, 255, 255),  # Blanco para caminos
+            TerrainType.WALL: (128, 128, 128),    # Gris para muros
+            TerrainType.ROAD: (255, 255, 255),    # Blanco para caminos
+            TerrainType.LAND: (250, 191, 143),   # Beige para tierra
+            TerrainType.WATER: (0, 175, 255),   # Azul para agua
+            TerrainType.SAND: (255, 192, 0),    # Beige para arena
+            TerrainType.FOREST: (150, 210, 80),    # Verde para bosque
+            TerrainType.MOUNTAIN: (128, 128, 128),  # Marrón para montaña
         }
 
         self._initialized = True

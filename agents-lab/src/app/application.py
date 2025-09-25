@@ -12,6 +12,7 @@ from src.app.events.event_bus import EventBus, AppEvent
 from src.app.events.input_handler import InputHandler
 
 from src.app.services.cell_inspector import CellInspector
+from src.app.services.map_editor import MapEditor
 
 from src.app.rendering.map_renderer import MapRenderer
 
@@ -33,6 +34,8 @@ class Application:
         self.input_handler = InputHandler(self.event_bus)
 
         self.cell_inspector = CellInspector()
+        self.map_editor = MapEditor()
+
         self.map_loader = MapLoader()
 
         self.map_renderer = None
@@ -78,6 +81,15 @@ class Application:
         self.event_bus.register_handler(
             AppEvent.CELL_CLICKED, self._on_cell_clicked)
 
+        self.event_bus.register_handler(
+            AppEvent.EDIT_MODE_TOGGLE, self._on_edit_mode_toggle)
+        self.event_bus.register_handler(
+            AppEvent.EDIT_MODE_EXIT, self._on_edit_mode_exit)
+        self.event_bus.register_handler(
+            AppEvent.CELL_EDIT_START, self._on_cell_edit_start)
+        self.event_bus.register_handler(
+            AppEvent.TERRAIN_CHANGE, self._on_terrain_change)
+
     def _on_cell_clicked(self, position) -> None:
         """Maneja el evento de click en una celda."""
         if not self.current_map or not self.coordinate_system:
@@ -88,11 +100,44 @@ class Application:
             x, y, self.current_map)
 
         if coordinate:
-            cell_info = self.cell_inspector.inspect_cell(
-                self.current_map, coordinate)
-            self.cell_inspector.print_cell_info(cell_info)
+            if self.map_editor.is_edit_mode:
+                # En modo edición, iniciar edición de celda
+                self.event_bus.emit(AppEvent.CELL_EDIT_START,
+                                    coordinate=coordinate)
+            else:
+                # En modo inspección, mostrar información
+                cell_info = self.cell_inspector.inspect_cell(
+                    self.current_map, coordinate)
+                self.cell_inspector.print_cell_info(cell_info)
         else:
             print("🔍 Click fuera del área del mapa")
+
+    def _on_edit_mode_toggle(self) -> None:
+        """Maneja el evento de alternar modo edición."""
+        self.map_editor.toggle_edit_mode()
+
+    def _on_edit_mode_exit(self) -> None:
+        """Maneja el evento de salir del modo edición."""
+        self.map_editor.exit_edit_mode()
+
+    def _on_cell_edit_start(self, coordinate) -> None:
+        """Maneja el evento de iniciar edición de celda."""
+        if not self.current_map:
+            return
+
+        success = self.map_editor.start_cell_edit(coordinate, self.current_map)
+        if not success:
+            print("❌ No se puede editar la celda en este momento")
+
+    def _on_terrain_change(self, terrain_value) -> None:
+        """Maneja el evento de cambio de tipo de terreno."""
+        if not self.current_map:
+            return
+
+        success = self.map_editor.apply_terrain_change(
+            terrain_value, self.current_map)
+        if not success and self.map_editor.has_pending_edit:
+            print("❌ No se pudo aplicar el cambio de terreno")
 
     def _on_exit(self) -> None:
         """Maneja el evento de salir de la aplicación."""
@@ -123,13 +168,13 @@ class Application:
         self._running = True
         self._last_frame_time = time.time()
 
-        print("Iniciado ciclo principal ...")
         print("Controles:")
         print("  ESC - Salir")
-        print("  R - Recargar applicación")
-        print("  E - Modo edición")
+        print("  R - Recargar aplicación")
+        print("  E - Alternar modo edición")
         print("  V - Salir del modo edición")
-        print("  Click - Inspeccionar celda")
+        print("  Click - Inspeccionar celda (o editar en modo edición)")
+        print("  0-9 - Cambiar tipo de terreno (en modo edición)")
 
         try:
             while self._running:

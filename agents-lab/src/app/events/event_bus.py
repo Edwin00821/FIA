@@ -6,7 +6,14 @@ class AppEvent(Enum):
     """Eventos de la aplicación."""
     EXIT = "exit"
     RELOAD = "reload"
+
     CELL_CLICKED = "cell_clicked"
+
+    EDIT_MODE_TOGGLE = "edit_mode_toggle"
+    EDIT_MODE_EXIT = "edit_mode_exit"
+    CELL_EDIT_START = "cell_edit_start"
+    TERRAIN_CHANGE = "terrain_change"
+    EDIT_CANCEL = "edit_cancel"
 
 
 class EventBus:
