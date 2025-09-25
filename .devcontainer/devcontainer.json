@@ -3,14 +3,19 @@
   "build": {
     "dockerfile": "Dockerfile"
   },
-  "mounts": [
-    "type=bind,source=/tmp/.X11-unix,target=/tmp/.X11-unix"
+  "features": {
+    "ghcr.io/devcontainers/features/desktop-lite:1": {
+      "password": "vscode",
+      "webPort": "6080",
+      "vncPort": "5901"
+    }
+  },
+  "forwardPorts": [
+    6080
   ],
   "runArgs": [
     "--env",
-    "DISPLAY=${localEnv:DISPLAY}",
-    "--env",
-    "QT_X11_NO_MITSHM=1"
+    "DISPLAY=${localEnv:DISPLAY}"
   ],
   "remoteUser": "vscode",
   "customizations": {
