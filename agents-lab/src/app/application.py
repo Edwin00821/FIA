@@ -4,10 +4,14 @@ from src.utils.map_loader import MapLoader
 
 from src.app.config.config_manager import ConfigManager
 
+from src.utils.coordinate_system import CoordinateSystem
+
 from src.app.engines.pygame_graphics_engine import PygameGraphicsEngine
 
 from src.app.events.event_bus import EventBus, AppEvent
 from src.app.events.input_handler import InputHandler
+
+from src.app.services.cell_inspector import CellInspector
 
 from src.app.rendering.map_renderer import MapRenderer
 
@@ -18,6 +22,7 @@ class Application:
     def __init__(self):
         self._running = False
         self._last_frame_time = 0.0
+        self.coordinate_system = None
 
         # Resolver dependencias principales
         self._config_manager = ConfigManager()
@@ -27,6 +32,7 @@ class Application:
         self.event_bus = EventBus()
         self.input_handler = InputHandler(self.event_bus)
 
+        self.cell_inspector = CellInspector()
         self.map_loader = MapLoader()
 
         self.map_renderer = None
@@ -56,6 +62,8 @@ class Application:
             self.map_renderer = MapRenderer(
                 self.graphics_engine, self._config_manager)
 
+            self.coordinate_system = CoordinateSystem(self._config_manager)
+
             print("\nMotor de aplicación inicializado correctamente\n")
             return True
 
@@ -67,6 +75,24 @@ class Application:
         """Configura los handlers del bus de eventos."""
         self.event_bus.register_handler(AppEvent.EXIT, self._on_exit)
         self.event_bus.register_handler(AppEvent.RELOAD, self._on_reload)
+        self.event_bus.register_handler(
+            AppEvent.CELL_CLICKED, self._on_cell_clicked)
+
+    def _on_cell_clicked(self, position) -> None:
+        """Maneja el evento de click en una celda."""
+        if not self.current_map or not self.coordinate_system:
+            return
+
+        x, y = position
+        coordinate = self.coordinate_system.screen_to_map(
+            x, y, self.current_map)
+
+        if coordinate:
+            cell_info = self.cell_inspector.inspect_cell(
+                self.current_map, coordinate)
+            self.cell_inspector.print_cell_info(cell_info)
+        else:
+            print("🔍 Click fuera del área del mapa")
 
     def _on_exit(self) -> None:
         """Maneja el evento de salir de la aplicación."""

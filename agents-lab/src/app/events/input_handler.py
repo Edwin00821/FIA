@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Tuple
 import pygame
 
 from .event_bus import EventBus, AppEvent
@@ -49,6 +49,20 @@ class InputHandler:
 
         elif event.type == pygame.KEYDOWN:
             self._handle_key_down(event.key)
+
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            self._handle_mouse_click(event.pos, event.button)
+
+    def _handle_mouse_click(self, position: Tuple[int, int], button: int) -> None:
+        """
+        Maneja eventos de click del mouse.
+
+        Args:
+            position: Posición (x, y) del click
+            button: Botón del mouse presionado
+        """
+        if button == 1:  # Click izquierdo
+            self.event_bus.emit(AppEvent.CELL_CLICKED, position=position)
 
     def _handle_key_down(self, key: int) -> None:
         """

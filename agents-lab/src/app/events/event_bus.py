@@ -6,6 +6,7 @@ class AppEvent(Enum):
     """Eventos de la aplicación."""
     EXIT = "exit"
     RELOAD = "reload"
+    CELL_CLICKED = "cell_clicked"
 
 
 class EventBus:
