@@ -9,6 +9,7 @@ from src.app.engines.graphics_engine import IGraphicsEngine
 from .header_renderer import HeaderRenderer
 from .grid_renderer import GridRenderer
 from .terrain_renderer import TerrainRenderer
+from .marks_renderer import MarksRenderer
 
 
 class MapRenderer:
@@ -32,9 +33,13 @@ class MapRenderer:
         self.config_manager = config_manager
 
         self.header_renderer = HeaderRenderer(graphics_engine, config_manager)
+        
         self.grid_renderer = GridRenderer(graphics_engine, config_manager)
+        
         self.terrain_renderer = TerrainRenderer(
             graphics_engine, config_manager)
+        
+        self.marks_renderer = MarksRenderer(graphics_engine, config_manager)
 
     def render_map(self, map_obj: Map) -> None:
         """
@@ -48,6 +53,7 @@ class MapRenderer:
         self.header_renderer.render(map_obj)
         self.grid_renderer.render(map_obj)
         self.terrain_renderer.render(map_obj)
+        self.marks_renderer.render(map_obj)
 
         self.gfx.present()
 

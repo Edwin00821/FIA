@@ -65,12 +65,31 @@ class Application:
 
             self.coordinate_system = CoordinateSystem(self._config_manager)
 
+            self._add_demo_marks()
+
             print("\nMotor de aplicación inicializado correctamente\n")
             return True
 
         except Exception as e:
             print(f"Error inicializando motor de aplicación: {e}")
             return False
+
+    def _add_demo_marks(self) -> None:
+        from src.core.cell import CellMark
+
+        self.current_map.grid[9][0].add_mark(CellMark.INITIAL)
+        self.current_map.grid[9][0].add_mark(CellMark.VISITED)
+        
+        self.current_map.grid[9][1].add_mark(CellMark.VISITED)
+        self.current_map.grid[9][1].add_mark(CellMark.DECISION)
+        self.current_map.grid[9][1].add_mark(CellMark.CURRENT)
+        
+        self.current_map.grid[8][1].add_mark(CellMark.VISITED)
+        
+        self.current_map.grid[7][1].add_mark(CellMark.CURRENT)
+        
+        self.current_map.grid[6][1].add_mark(CellMark.FINAL)
+
 
     def _setup_event_handlers(self) -> None:
         """Configura los handlers del bus de eventos."""
