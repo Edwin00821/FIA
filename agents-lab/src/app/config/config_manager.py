@@ -29,6 +29,7 @@ class DisplayConfig:
     COLOR_BORDER: Tuple[int, int, int] = (0, 0, 0)
     COLOR_TEXT: Tuple[int, int, int] = (0, 0, 0)
     COLOR_HEADER: Tuple[int, int, int] = (200, 200, 200)
+    COLOR_UNKNOWN: Tuple[int, int, int] = (0, 0, 0)
 
 
 class ConfigManager:

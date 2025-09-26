@@ -75,6 +75,25 @@ class Cell:
         self.terrain = terrain
         self.marks: Set[CellMark] = set()
 
+        self.is_discovered: bool = False
+
+    def discover(self) -> None:
+        """Marca la celda como descubierta por un agente."""
+        self.is_discovered = True
+
+    def mask(self) -> None:
+        """Enmascara la celda (la marca como no descubierta)."""
+        self.is_discovered = False
+
+    def is_visible(self) -> bool:
+        """
+        Verifica si la celda es visible para el agente.
+
+        Returns:
+            bool: True si la celda ha sido descubierta
+        """
+        return self.is_discovered
+
     def is_passable(self) -> bool:
         """
         Verifica si esta celda puede ser atravesada.
@@ -174,7 +193,7 @@ class Cell:
 
         symbols = [mark_symbols[mark]
                    for mark in self.marks if mark in mark_symbols]
-        
+
         return ','.join(symbols)
 
     def __eq__(self, other) -> bool:

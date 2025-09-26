@@ -24,8 +24,8 @@ Los mapas se cargarán desde archivos de texto en formato CSV o similar, y se de
 
 - [x] **1.1 Cargar mapa**: Importar un archivo (`.txt` o `.csv`) con el mapa codificado y mostrarlo en una interfaz gráfica.
 - [x] **1.2 Consultar celda**: Obtener el valor de una coordenada y mostrar su significado (ej. “(7,A) es muro”).
-- [] **1.3 Modificar celda**: Cambiar el valor de una coordenada específica en el mapa.
-- [] **1.4 Marcar posiciones**: Permitir anotaciones como:
+- [x] **1.3 Modificar celda**: Cambiar el valor de una coordenada específica en el mapa.
+- [x] **1.4 Marcar posiciones**: Permitir anotaciones como:
   - `I`: Punto inicial
   - `X`: Posición actual
   - `V`: Visitado
@@ -40,9 +40,9 @@ Diferenciar entre:
 
 Se debe permitir:
 
-1. [] Enmascarar todo el mapa (desconocido).
-2. [] Descubrir una posición al visitarla.
-3. [] Volver a enmascarar posiciones.
+1. [x] Enmascarar todo el mapa (desconocido).
+2. [x] Descubrir una posición al visitarla.
+3. [x] Volver a enmascarar posiciones.
 
 ### 3. Creación de agentes
 

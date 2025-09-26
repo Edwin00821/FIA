@@ -76,20 +76,29 @@ class Application:
 
     def _add_demo_marks(self) -> None:
         from src.core.cell import CellMark
+        self.current_map.discover_cell(0, 0)
 
+        self.current_map.discover_cell(9, 0)
         self.current_map.grid[9][0].add_mark(CellMark.INITIAL)
         self.current_map.grid[9][0].add_mark(CellMark.VISITED)
         
+
+        self.current_map.discover_cell(9, 1)
         self.current_map.grid[9][1].add_mark(CellMark.VISITED)
         self.current_map.grid[9][1].add_mark(CellMark.DECISION)
         self.current_map.grid[9][1].add_mark(CellMark.CURRENT)
-        
-        self.current_map.grid[8][1].add_mark(CellMark.VISITED)
-        
-        self.current_map.grid[7][1].add_mark(CellMark.CURRENT)
-        
-        self.current_map.grid[6][1].add_mark(CellMark.FINAL)
 
+        self.current_map.discover_cell(8, 1)
+        self.current_map.grid[8][1].add_mark(CellMark.VISITED)
+
+        self.current_map.discover_cell(7, 1)
+        self.current_map.grid[7][1].add_mark(CellMark.CURRENT)
+
+        self.current_map.discover_cell(6, 1)
+        self.current_map.grid[6][1].add_mark(CellMark.FINAL)
+        
+        self.current_map.mask_cell(0, 0)
+        
 
     def _setup_event_handlers(self) -> None:
         """Configura los handlers del bus de eventos."""
