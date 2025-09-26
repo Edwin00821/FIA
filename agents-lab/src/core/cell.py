@@ -68,6 +68,17 @@ class Cell:
         """
         return self.terrain != TerrainType.WALL
 
+
+    def get_display_info(self) -> str:
+        """
+        Obtiene información formateada para mostrar al usuario.
+
+        Returns:
+            String con información legible sobre la celda
+        """
+        passable_status = "transitable" if self.is_passable() else "no transitable"
+        return f"{self.terrain.name.lower()} ({passable_status})"
+
     def __eq__(self, other) -> bool:
         """Verifica igualdad con otra celda."""
         if not isinstance(other, Cell):
