@@ -1,5 +1,6 @@
-from typing import Dict, Tuple
 import pygame
+
+from typing import Dict, Tuple
 
 from .event_bus import EventBus, AppEvent
 
@@ -27,6 +28,17 @@ class InputHandler:
             pygame.K_r: AppEvent.RELOAD,
             pygame.K_e: AppEvent.EDIT_MODE_TOGGLE,
             pygame.K_v: AppEvent.EDIT_MODE_EXIT,
+
+            # Controles de agente
+            pygame.K_j: AppEvent.AGENT_TURN_LEFT,
+            pygame.K_l: AppEvent.AGENT_TURN_RIGHT,
+            
+            pygame.K_SPACE: AppEvent.AGENT_MOVE_FORWARD,
+            
+            pygame.K_w: AppEvent.AGENT_MOVE_UP,
+            pygame.K_s: AppEvent.AGENT_MOVE_DOWN,
+            pygame.K_d: AppEvent.AGENT_MOVE_RIGHT,
+            pygame.K_a: AppEvent.AGENT_MOVE_LEFT,
         }
 
     def process_events(self) -> None:

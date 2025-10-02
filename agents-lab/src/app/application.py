@@ -1,5 +1,11 @@
 import time
 
+from src.core.cell import CellMark
+from src.core.agent import Agent
+from src.core.agent_types import Agent1, Agent2, Agent3, Agent4, Agent4
+from src.core.actions import TurnLeft, TurnRight, MoveForward, MoveUp, MoveDown, MoveRight, MoveLeft
+
+
 from src.utils.map_loader import MapLoader
 
 from src.app.config.config_manager import ConfigManager
@@ -39,6 +45,8 @@ class Application:
         self.map_renderer = None
         self.current_map = None
 
+        self.current_agent: Agent = None
+
     def initialize(self) -> bool:
         """Inicializa el motor de la aplicación."""
         try:
@@ -65,7 +73,13 @@ class Application:
 
             self.coordinate_system = CoordinateSystem(self._config_manager)
 
-            self._add_demo_marks()
+            self.current_map.grid[9][0].add_mark(CellMark.INITIAL)
+            self.current_map.grid[1][4].add_mark(CellMark.FINAL)
+            self.current_map.mark_decision_points()
+
+            self.current_agent = Agent3(self.event_bus)
+
+            self.current_agent.initialize_on_map(self.current_map)
 
             print("\nMotor de aplicación inicializado correctamente\n")
             return True
@@ -73,32 +87,6 @@ class Application:
         except Exception as e:
             print(f"Error inicializando motor de aplicación: {e}")
             return False
-
-    def _add_demo_marks(self) -> None:
-        from src.core.cell import CellMark
-        self.current_map.discover_cell(0, 0)
-
-        self.current_map.discover_cell(9, 0)
-        self.current_map.grid[9][0].add_mark(CellMark.INITIAL)
-        self.current_map.grid[9][0].add_mark(CellMark.VISITED)
-        
-
-        self.current_map.discover_cell(9, 1)
-        self.current_map.grid[9][1].add_mark(CellMark.VISITED)
-        self.current_map.grid[9][1].add_mark(CellMark.DECISION)
-        self.current_map.grid[9][1].add_mark(CellMark.CURRENT)
-
-        self.current_map.discover_cell(8, 1)
-        self.current_map.grid[8][1].add_mark(CellMark.VISITED)
-
-        self.current_map.discover_cell(7, 1)
-        self.current_map.grid[7][1].add_mark(CellMark.CURRENT)
-
-        self.current_map.discover_cell(6, 1)
-        self.current_map.grid[6][1].add_mark(CellMark.FINAL)
-        
-        self.current_map.mask_cell(0, 0)
-        
 
     def _setup_event_handlers(self) -> None:
         """Configura los handlers del bus de eventos."""
@@ -118,6 +106,26 @@ class Application:
             AppEvent.CELL_EDIT_START, self._on_cell_edit_start)
         self.event_bus.register_handler(
             AppEvent.TERRAIN_CHANGE, self._on_terrain_change)
+
+        self.event_bus.register_handler(
+            AppEvent.AGENT_TURN_LEFT, self._on_agent_turn_left)
+        self.event_bus.register_handler(
+            AppEvent.AGENT_TURN_RIGHT, self._on_agent_turn_right)
+        
+        self.event_bus.register_handler(
+            AppEvent.AGENT_MOVED, self._on_agent_moved)
+        
+        self.event_bus.register_handler(
+            AppEvent.AGENT_MOVE_FORWARD, self._on_agent_move_forward)
+        
+        self.event_bus.register_handler(
+            AppEvent.AGENT_MOVE_UP, self._on_agent_move_up)
+        self.event_bus.register_handler(
+            AppEvent.AGENT_MOVE_DOWN, self._on_agent_move_down)
+        self.event_bus.register_handler(
+            AppEvent.AGENT_MOVE_RIGHT, self._on_agent_move_rigth)
+        self.event_bus.register_handler(
+            AppEvent.AGENT_MOVE_LEFT, self._on_agent_move_left)
 
     def _on_cell_clicked(self, position) -> None:
         """Maneja el evento de click en una celda."""
@@ -190,9 +198,82 @@ class Application:
             self.map_renderer = MapRenderer(
                 self.graphics_engine, self._config_manager)
 
+            self.current_map.grid[9][0].add_mark(CellMark.INITIAL)
+            self.current_map.grid[1][4].add_mark(CellMark.FINAL)
+            self.current_map.mark_decision_points()
+
+            # Reinicializar agente en el nuevo mapa
+            if self.current_agent:
+                self.current_agent.reset()
+                self.current_agent.initialize_on_map(self.current_map)
+
             print("Aplicación recargada exitosamente")
         except Exception as e:
             print(f"Error recargando aplicación: {e}")
+
+    def _on_agent_moved(self, old_position, new_position, direction) -> None:
+        """Maneja el evento de movimiento del agente."""
+        if not self.current_map:
+            return
+
+        old_terrain = self.current_map.grid[old_position[0]
+                                            ][old_position[1]].terrain.name.lower()
+        new_terrain = self.current_map.grid[new_position[0]
+                                            ][new_position[1]].terrain.name.lower()
+
+        print(
+            f"El agente se movió de ({old_position[0]}, {old_position[1]}, {old_terrain}) a ({new_position[0]}, {new_position[1]}, {new_terrain})")
+        print(
+            f"Total de movimientos realizados: {self.current_agent.movement_count}")
+
+    def _on_agent_turn_left(self) -> None:
+        """Maneja el evento de giro a la izquierda del agente."""
+        if self.current_agent and self.current_map:
+            action = TurnLeft()
+            if self.current_agent.perform_action(action, self.current_map, AppEvent.AGENT_MOVED):
+              print("_on_agent_turn_left\n")
+
+    def _on_agent_turn_right(self) -> None:
+        """Maneja el evento de giro a la derecha del agente."""
+        if self.current_agent and self.current_map:
+            action = TurnRight()
+            if self.current_agent.perform_action(action, self.current_map, AppEvent.AGENT_MOVED):
+              print("_on_agent_turn_right\n")
+
+    def _on_agent_move_forward(self) -> None:
+        """Maneja el evento de movimiento hacia adelante del agente."""
+        if self.current_agent and self.current_map:
+            action = MoveForward()
+            if self.current_agent.perform_action(action, self.current_map, AppEvent.AGENT_MOVED):
+              print("")
+
+    def _on_agent_move_up(self) -> None:
+        """Maneja el evento de movimiento hacia arriba del agente."""
+        if self.current_agent and self.current_map:
+            action = MoveUp()
+            if self.current_agent.perform_action(action, self.current_map, AppEvent.AGENT_MOVED):
+              print("_on_agent_move_up\n")
+
+    def _on_agent_move_down(self) -> None:
+        """Maneja el evento de movimiento hacia abajo del agente."""
+        if self.current_agent and self.current_map:
+            action = MoveDown()
+            if self.current_agent.perform_action(action, self.current_map, AppEvent.AGENT_MOVED):
+              print("_on_agent_move_down\n")
+
+    def _on_agent_move_rigth(self) -> None:
+        """Maneja el evento de movimiento hacia la derecha este del agente."""
+        if self.current_agent and self.current_map:
+            action = MoveRight()
+            if self.current_agent.perform_action(action, self.current_map, AppEvent.AGENT_MOVED):
+              print("_on_agent_move_rigth\n")
+
+    def _on_agent_move_left(self) -> None:
+        """Maneja el evento de movimiento hacia la izquierda del agente."""
+        if self.current_agent and self.current_map:
+            action = MoveLeft()
+            if self.current_agent.perform_action(action, self.current_map, AppEvent.AGENT_MOVED):
+              print("_on_agent_move_left\n")
 
     def run(self) -> None:
         """Ejecuta el ciclo principal de la aplicación."""
@@ -208,7 +289,14 @@ class Application:
         print("  E - Alternar modo edición")
         print("  V - Salir del modo edición")
         print("  Click - Inspeccionar celda (o editar en modo edición)")
-        print("  0-9 - Cambiar tipo de terreno (en modo edición)\n")
+        print("  0-9 - Cambiar tipo de terreno (en modo edición)")
+        
+        print("  Controles de Agente:")
+        print("    J - Girar izquierda")
+        print("    L - Girar derecha")
+        print("    ESPACE - Mover enfrente")
+        print("    WSAD - Mover en direcciones (Arriba/Abajo/Derecha/Izquierda)")
+        print()
 
         try:
             while self._running:
@@ -243,6 +331,9 @@ class Application:
         """Renderiza un frame."""
         if self.current_map and self.map_renderer:
             self.map_renderer.render_map(self.current_map)
+
+        if self.current_agent:
+            self.current_agent.perceive(self.current_map)
 
     def _cleanup(self) -> None:
         """Limpia recursos de la aplicación."""

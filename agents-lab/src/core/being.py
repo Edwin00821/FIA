@@ -1,0 +1,90 @@
+from typing import Optional, Tuple, Dict
+from .sensors import Sensor, Direction
+from .map import Map
+
+
+class Being:
+    """
+    Clase base para seres que pueden percibir el entorno.
+
+    Los seres tienen sensores para percibir su entorno y pueden ser colocados en el mapa.
+    """
+
+    def __init__(self, sensor: Sensor):
+        """
+        Inicializa un nuevo ser.
+
+        Args:
+            sensor: Sensor para percepción del entorno
+        """
+        self.sensor = sensor
+        self.position: Optional[Tuple[int, int]] = None
+        self.direction: Direction = Direction.UP  # Siempre inicia hacia arriba
+
+    def place_on_map(self, map_obj: Map, coordinate: str) -> bool:
+        """
+        Coloca al ser en una coordenada específica del mapa.
+
+        Args:
+            map_obj: El mapa donde colocar al ser
+            coordinate: Coordenada en formato "filaColumna" (e.g., "3B")
+
+        Returns:
+            True si se colocó exitosamente
+        """
+        try:
+            row_str, col_str = coordinate[:-1], coordinate[-1]
+            row = int(row_str) - 1  # Asumiendo filas empezando en 1
+            col = ord(col_str.upper()) - ord('A')  # Columnas A=0, B=1, etc.
+
+            if 0 <= row < map_obj.rows and 0 <= col < map_obj.cols:
+                self.position = (row, col)
+                # Descubrir la celda inicial
+                map_obj.discover_cell(row, col)
+                return True
+            else:
+                print(f"Coordenada {coordinate} fuera de los límites del mapa")
+                return False
+        except (ValueError, IndexError):
+            print(f"Coordenada inválida: {coordinate}")
+            return False
+
+    def perceive(self, map_obj: Map) -> Dict[str, bool]:
+        """
+        Percibe el entorno usando el sensor del ser.
+
+        Args:
+            map_obj: El mapa del entorno
+
+        Returns:
+            Diccionario con la información percibida
+        """
+        if self.position is None:
+            return {}
+        return self.sensor.perceive(map_obj, self.position, self.direction)
+
+    def get_state(self) -> Dict:
+        """
+        Obtiene el estado actual del ser.
+
+        Returns:
+            Diccionario con información del estado
+        """
+        return {
+            'position': self.position,
+            'direction': self.direction.value if self.direction else None
+        }
+
+    def reset(self) -> None:
+        """Reinicia el estado del ser."""
+        self.position = None
+        self.direction = Direction.UP
+
+    def __str__(self) -> str:
+        """Representación string del ser."""
+        pos_str = f"({self.position[0]}, {self.position[1]})" if self.position else "None"
+        return f"Being(position={pos_str}, direction={self.direction.value})"
+
+    def __repr__(self) -> str:
+        """Representación detallada para debug."""
+        return self.__str__()

@@ -6,7 +6,7 @@ class AppEvent(Enum):
     """Eventos de la aplicación."""
     EXIT = "exit"
     RELOAD = "reload"
-    
+
     CELL_INSPECTED = "cell_inspected"
 
     CELL_CLICKED = "cell_clicked"
@@ -16,6 +16,17 @@ class AppEvent(Enum):
     CELL_EDIT_START = "cell_edit_start"
     TERRAIN_CHANGE = "terrain_change"
     EDIT_CANCEL = "edit_cancel"
+
+    AGENT_MOVED = "agent_moved"
+
+    AGENT_TURN_LEFT = "agent_turn_left"
+    AGENT_TURN_RIGHT = "agent_turn_right"
+    
+    AGENT_MOVE_FORWARD = "agent_move_forward"
+    AGENT_MOVE_UP = "agent_move_up"
+    AGENT_MOVE_DOWN = "agent_move_down"
+    AGENT_MOVE_RIGHT = "agent_move_right"
+    AGENT_MOVE_LEFT = "agent_move_left"
 
 
 class EventBus:

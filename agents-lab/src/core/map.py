@@ -1,6 +1,6 @@
 from typing import List
 
-from .cell import Cell
+from .cell import Cell, CellMark
 
 
 class Map:
@@ -73,6 +73,31 @@ class Map:
                 if self.grid[row][col].is_visible():
                     count += 1
         return count
+
+    def mark_decision_points(self) -> None:
+        """
+        Marca las celdas que son puntos de decisión.
+
+        Un punto de decisión es una celda transitable que tiene más de 2 vecinos transitables.
+        """
+        directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]  # up, down, left, right
+
+        for row in range(self.rows):
+            for col in range(self.cols):
+                cell = self.grid[row][col]
+                if not cell.is_passable():
+                    continue
+
+                # Contar vecinos transitables
+                passable_neighbors = 0
+                for dr, dc in directions:
+                    nr, nc = row + dr, col + dc
+                    if 0 <= nr < self.rows and 0 <= nc < self.cols:
+                        if self.grid[nr][nc].is_passable():
+                            passable_neighbors += 1
+
+                if passable_neighbors > 2:
+                    cell.add_mark(CellMark.DECISION)
 
     def __str__(self) -> str:
         """Representación string básica del mapa."""

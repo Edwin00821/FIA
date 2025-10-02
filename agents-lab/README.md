@@ -30,6 +30,7 @@ Los mapas se cargarán desde archivos de texto en formato CSV o similar, y se de
   - `X`: Posición actual
   - `V`: Visitado
   - `O`: Punto de decisión
+  - `F`: Punto final
 
 ### 2. Enmascaramiento de mapas
 
@@ -50,14 +51,14 @@ Diseñar agentes con diferentes **habilidades de percepción y acción**:
 
 #### 3.1 Sensores
 
-- [] **Agente con 1 sensor**: percibe solo en una dirección (ej. frente).
-- [] **Agente con 4 sensores**: percibe en todas las direcciones (arriba, abajo, izquierda, derecha).
+- [x] **Agente con 1 sensor**: percibe solo en una dirección (ej. frente).
+- [x] **Agente con 4 sensores**: percibe en todas las direcciones (arriba, abajo, izquierda, derecha).
 
 #### 3.2 Acciones
 
-- [] Ejemplo **Agente 1**: girar izquierda, avanzar.
-- [] Ejemplo **Agente 2**: girar izquierda, girar derecha, avanzar.
-- [] Ejemplo **Agente 3**: moverse libremente en las 4 direcciones.
+- [x] Ejemplo **Agente 1**: girar izquierda, avanzar.
+- [x] Ejemplo **Agente 2**: girar izquierda, girar derecha, avanzar.
+- [x] Ejemplo **Agente 3**: moverse libremente en las 4 direcciones.
 
 #### 3.3 Costos de movimiento
 
@@ -73,9 +74,9 @@ Implementar una modalidad donde el **usuario controla al agente**:
 
 1. [] Seleccionar tipo de ser (Humano, Mono, etc.).
 2. [] Establecer punto inicial y final.
-3. [] Mover al agente con teclado o mouse.
-4. [] Marcar casillas visitadas (`V`) y puntos de decisión (`O`).
-5. [] Contabilizar:
+3. [x] Mover al agente con teclado o mouse.
+4. [x] Marcar casillas visitadas (`V`) y puntos de decisión (`O`).
+5. [x] Contabilizar:
    - Número de movimientos realizados.
    - Costo total acumulado según el terreno.
 
@@ -87,7 +88,7 @@ Implementar una modalidad donde el **usuario controla al agente**:
 
 ## Resultados esperados
 
-- [] Sistema que **cargue, visualice y modifique mapas**.
-- [] Interfaz para **consultar y editar celdas**.
-- [] Simulación de un agente que **descubra progresivamente** su entorno.
-- [] Opción de **control manual de un agente**, con marcadores y cálculo de costos.
+- [x] Sistema que **cargue, visualice y modifique mapas**.
+- [x] Interfaz para **consultar y editar celdas**.
+- [x] Simulación de un agente que **descubra progresivamente** su entorno.
+- [x] Opción de **control manual de un agente**, con marcadores y cálculo de costos.
