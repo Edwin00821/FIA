@@ -9,7 +9,7 @@ class Direction(Enum):
     UP = "Arriba"
     DOWN = "Abajo"
     RIGHT = "Derecha"
-    LEFT = "Izquirda"
+    LEFT = "Izquierda"
 
 
 class Sensor(ABC):

@@ -2,7 +2,7 @@ import time
 
 from src.core.cell import CellMark
 from src.core.agent import Agent
-from src.core.agent_types import Agent1, Agent2, Agent3, Agent4, Agent4
+from src.core.agent_types import Agent1, Agent2, Agent3, Agent4, Agent5
 from src.core.actions import TurnLeft, TurnRight, MoveForward, MoveUp, MoveDown, MoveRight, MoveLeft
 
 
@@ -123,7 +123,7 @@ class Application:
         self.event_bus.register_handler(
             AppEvent.AGENT_MOVE_DOWN, self._on_agent_move_down)
         self.event_bus.register_handler(
-            AppEvent.AGENT_MOVE_RIGHT, self._on_agent_move_rigth)
+            AppEvent.AGENT_MOVE_RIGHT, self._on_agent_move_right)
         self.event_bus.register_handler(
             AppEvent.AGENT_MOVE_LEFT, self._on_agent_move_left)
 
@@ -261,12 +261,12 @@ class Application:
             if self.current_agent.perform_action(action, self.current_map, AppEvent.AGENT_MOVED):
               print("_on_agent_move_down\n")
 
-    def _on_agent_move_rigth(self) -> None:
+    def _on_agent_move_right(self) -> None:
         """Maneja el evento de movimiento hacia la derecha este del agente."""
         if self.current_agent and self.current_map:
             action = MoveRight()
             if self.current_agent.perform_action(action, self.current_map, AppEvent.AGENT_MOVED):
-              print("_on_agent_move_rigth\n")
+              print("_on_agent_move_right\n")
 
     def _on_agent_move_left(self) -> None:
         """Maneja el evento de movimiento hacia la izquierda del agente."""
