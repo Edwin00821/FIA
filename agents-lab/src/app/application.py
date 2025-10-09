@@ -2,7 +2,7 @@ import time
 
 from src.core.cell import CellMark
 from src.core.agent import Agent
-from src.core.agent_types import Agent1, Agent2, Agent3, Agent4, Agent5
+from src.core.agent_factory import AgentFactory
 from src.core.actions import TurnLeft, TurnRight, MoveForward, MoveUp, MoveDown, MoveRight, MoveLeft
 
 
@@ -77,7 +77,7 @@ class Application:
             self.current_map.grid[1][4].add_mark(CellMark.FINAL)
             self.current_map.mark_decision_points()
 
-            self.current_agent = Agent3(self.event_bus)
+            self.current_agent = AgentFactory.create_agent(3, self.event_bus)
 
             self.current_agent.initialize_on_map(self.current_map)
 

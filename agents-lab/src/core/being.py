@@ -75,6 +75,15 @@ class Being:
             'direction': self.direction.value if self.direction else None
         }
 
+    def set_sensor(self, sensor: Sensor) -> None:
+        """
+        Cambia el sensor del ser.
+
+        Args:
+            sensor: Nuevo sensor a usar
+        """
+        self.sensor = sensor
+
     def reset(self) -> None:
         """Reinicia el estado del ser."""
         self.position = None

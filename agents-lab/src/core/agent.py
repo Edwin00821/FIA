@@ -32,6 +32,15 @@ class Agent(Being):
         # Estado adicional del agente
         self.movement_count: int = 0
 
+    def set_available_actions(self, actions: List[Action]) -> None:
+        """
+        Cambia las acciones disponibles para el agente.
+
+        Args:
+            actions: Nueva lista de acciones disponibles
+        """
+        self.available_actions = actions
+
     def initialize_on_map(self, map_obj: Map) -> bool:
         """
         Inicializa el agente en el punto inicial ('I') del mapa.
@@ -42,16 +51,15 @@ class Agent(Being):
         Returns:
             True si se encontró y configuró el punto inicial
         """
-        for row in range(map_obj.rows):
-            for col in range(map_obj.cols):
-                cell = map_obj.grid[row][col]
-                if cell.has_mark(CellMark.INITIAL):
-                    self.position = (row, col)
-                    # Marcar la posición inicial como visitada
-                    cell.add_mark(CellMark.CURRENT)
-                    # Descubrir la celda inicial
-                    map_obj.discover_cell(row, col)
-                    return True
+        initial_positions = map_obj.get_positions_with_mark(CellMark.INITIAL)
+        if initial_positions:
+            row, col = initial_positions[0]  # Asumiendo un solo punto inicial
+            self.position = (row, col)
+            # Marcar la posición inicial como visitada
+            map_obj.grid[row][col].add_mark(CellMark.CURRENT)
+            # Descubrir la celda inicial
+            map_obj.discover_cell(row, col)
+            return True
         return False
 
     def can_perform_action(self, action: Action, map_obj: Map) -> bool:

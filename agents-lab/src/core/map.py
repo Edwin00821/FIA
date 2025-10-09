@@ -1,4 +1,5 @@
-from typing import List
+from typing import List, Set, Tuple, Dict
+from collections import defaultdict
 
 from .cell import Cell, CellMark
 
@@ -21,12 +22,16 @@ class Map:
         self.grid = grid
         self.rows = len(grid)
         self.cols = len(grid[0]) if grid else 0
+        self.discovered_cells: Set[Tuple[int, int]] = set()
+        self.mark_index: Dict[CellMark, List[Tuple[int, int]]] = defaultdict(list)
+        self._index_built = False
 
     def mask_all(self) -> None:
         """Enmascara todo el mapa (marca todas las celdas como no descubiertas)."""
         for row in range(self.rows):
             for col in range(self.cols):
                 self.grid[row][col].mask()
+        self.discovered_cells.clear()
 
     def discover_cell(self, row: int, col: int) -> bool:
         """
@@ -41,6 +46,7 @@ class Map:
         """
         if 0 <= row < self.rows and 0 <= col < self.cols:
             self.grid[row][col].discover()
+            self.discovered_cells.add((row, col))
             return True
         return False
 
@@ -73,6 +79,33 @@ class Map:
                 if self.grid[row][col].is_visible():
                     count += 1
         return count
+
+    def _build_mark_index(self) -> None:
+        """Construye el índice de marcas si no está construido."""
+        if self._index_built:
+            return
+        self.mark_index.clear()
+        for row in range(self.rows):
+            for col in range(self.cols):
+                cell = self.grid[row][col]
+                for mark in cell.marks:
+                    self.mark_index[mark].append((row, col))
+        self._index_built = True
+
+    def get_positions_with_mark(self, mark: CellMark) -> List[Tuple[int, int]]:
+        """
+        Obtiene todas las posiciones con una marca específica.
+
+        Args:
+            mark: Marca a buscar
+
+        Returns:
+            Lista de tuplas (row, col)
+        """
+        self._build_mark_index()
+        print("-----")
+        print(self.mark_index)
+        return self.mark_index[mark].copy()
 
     def mark_decision_points(self) -> None:
         """

@@ -7,7 +7,7 @@ from src.core.cell import TerrainType
 @dataclass
 class AppConfig:
     """Configuración general de la aplicación."""
-    DEFAULT_MAP_PATH: str = "data/maze.txt"
+    DEFAULT_MAP_PATH: str = "data/map.csv"
     DATA_DIRECTORY: str = "data"
     WINDOW_TITLE: str = "FIA - Fundamentos de Inteligencia Artificial"
 
