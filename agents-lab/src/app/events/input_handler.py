@@ -28,6 +28,7 @@ class InputHandler:
             pygame.K_r: AppEvent.RELOAD,
             pygame.K_e: AppEvent.EDIT_MODE_TOGGLE,
             pygame.K_v: AppEvent.EDIT_MODE_EXIT,
+            pygame.K_m: AppEvent.SWITCH_GAME_MODE,
 
             # Controles de agente
             pygame.K_j: AppEvent.AGENT_TURN_LEFT,

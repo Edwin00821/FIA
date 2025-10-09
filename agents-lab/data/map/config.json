@@ -1,0 +1,8 @@
+{
+  "mode": "map",
+  "map_path": "data/map/board.csv",
+  "initial_position": [5, 2],
+  "goal_position": [8, 7],
+  "entity_type": "human",
+  "entity_config": {}
+}

@@ -103,8 +103,6 @@ class Map:
             Lista de tuplas (row, col)
         """
         self._build_mark_index()
-        print("-----")
-        print(self.mark_index)
         return self.mark_index[mark].copy()
 
     def mark_decision_points(self) -> None:

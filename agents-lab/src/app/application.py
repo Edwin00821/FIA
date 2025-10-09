@@ -4,9 +4,10 @@ from src.core.cell import CellMark
 from src.core.agent import Agent
 from src.core.agent_factory import AgentFactory
 from src.core.actions import TurnLeft, TurnRight, MoveForward, MoveUp, MoveDown, MoveRight, MoveLeft
-
+from src.core.game_mode import GameMode, GameConfig
 
 from src.utils.map_loader import MapLoader
+from src.utils.game_config_loader import GameConfigLoader, GameConfigLoaderError
 
 from src.app.config.config_manager import ConfigManager
 
@@ -42,6 +43,11 @@ class Application:
 
         self.map_loader = MapLoader()
 
+        self.game_config_loader = GameConfigLoader(
+            self._config_manager.app.DATA_DIRECTORY)
+
+        self.game_mode: GameMode = GameMode.MAZE
+
         self.map_renderer = None
         self.current_map = None
 
@@ -54,32 +60,18 @@ class Application:
 
             self._setup_event_handlers()
 
-            # Cargar mapa por defecto
-            map_path = self._config_manager.app.DEFAULT_MAP_PATH
-            self.current_map = self.map_loader.load_map(map_path)
+            # Cargar configuración del modo inicial
+            try:
+                self.current_game_config = self.game_config_loader.load_config(
+                    self.game_mode
+                )
+            except GameConfigLoaderError as e:
+                print(f"Error cargando configuración del juego: {e}")
+                return False
 
-            # Calcular tamaño de ventana e inicializar renderizado
-            width, height = MapRenderer.calculate_window_size(
-                self.current_map, self._config_manager.display
-            )
-
-            # Inicializar el motor gráfico
-            self.graphics_engine.initialize(
-                width + 1, height + 1, self._config_manager.app.WINDOW_TITLE)
-
-            # Crear el renderer
-            self.map_renderer = MapRenderer(
-                self.graphics_engine, self._config_manager)
-
-            self.coordinate_system = CoordinateSystem(self._config_manager)
-
-            self.current_map.grid[9][0].add_mark(CellMark.INITIAL)
-            self.current_map.grid[1][4].add_mark(CellMark.FINAL)
-            self.current_map.mark_decision_points()
-
-            self.current_agent = AgentFactory.create_agent(3, self.event_bus)
-
-            self.current_agent.initialize_on_map(self.current_map)
+            # Cargar estado del juego según configuración
+            if not self._load_game_state(self.game_mode):
+                return False
 
             print("\nMotor de aplicación inicializado correctamente\n")
             return True
@@ -92,6 +84,10 @@ class Application:
         """Configura los handlers del bus de eventos."""
         self.event_bus.register_handler(AppEvent.EXIT, self._on_exit)
         self.event_bus.register_handler(AppEvent.RELOAD, self._on_reload)
+
+        self.event_bus.register_handler(
+            AppEvent.SWITCH_GAME_MODE, self._on_switch_game_mode)
+
         self.event_bus.register_handler(
             AppEvent.CELL_INSPECTED, self._on_cell_inspected)
 
@@ -111,13 +107,13 @@ class Application:
             AppEvent.AGENT_TURN_LEFT, self._on_agent_turn_left)
         self.event_bus.register_handler(
             AppEvent.AGENT_TURN_RIGHT, self._on_agent_turn_right)
-        
+
         self.event_bus.register_handler(
             AppEvent.AGENT_MOVED, self._on_agent_moved)
-        
+
         self.event_bus.register_handler(
             AppEvent.AGENT_MOVE_FORWARD, self._on_agent_move_forward)
-        
+
         self.event_bus.register_handler(
             AppEvent.AGENT_MOVE_UP, self._on_agent_move_up)
         self.event_bus.register_handler(
@@ -190,24 +186,20 @@ class Application:
         """Maneja el evento de recargar la aplicación."""
         print("\nRecargando aplicación...")
         try:
-            # Recargar el mapa
-            map_path = self._config_manager.app.DEFAULT_MAP_PATH
-            self.current_map = self.map_loader.load_map(map_path)
+            # Recargar configuración del modo actual
+            self.current_game_config = self.game_config_loader.load_config(
+                self.game_mode
+            )
 
-            # Recrear el renderer
-            self.map_renderer = MapRenderer(
-                self.graphics_engine, self._config_manager)
-
-            self.current_map.grid[9][0].add_mark(CellMark.INITIAL)
-            self.current_map.grid[1][4].add_mark(CellMark.FINAL)
-            self.current_map.mark_decision_points()
-
-            # Reinicializar agente en el nuevo mapa
+            # Recargar estado del juego
             if self.current_agent:
                 self.current_agent.reset()
-                self.current_agent.initialize_on_map(self.current_map)
 
-            print("Aplicación recargada exitosamente")
+            if self._load_game_state(self.game_mode):
+                print("Aplicación recargada exitosamente")
+            else:
+                print("Error recargando aplicación")
+
         except Exception as e:
             print(f"Error recargando aplicación: {e}")
 
@@ -231,49 +223,168 @@ class Application:
         if self.current_agent and self.current_map:
             action = TurnLeft()
             if self.current_agent.perform_action(action, self.current_map, AppEvent.AGENT_MOVED):
-              print("_on_agent_turn_left\n")
+                print("_on_agent_turn_left\n")
 
     def _on_agent_turn_right(self) -> None:
         """Maneja el evento de giro a la derecha del agente."""
         if self.current_agent and self.current_map:
             action = TurnRight()
             if self.current_agent.perform_action(action, self.current_map, AppEvent.AGENT_MOVED):
-              print("_on_agent_turn_right\n")
+                print("_on_agent_turn_right\n")
 
     def _on_agent_move_forward(self) -> None:
         """Maneja el evento de movimiento hacia adelante del agente."""
         if self.current_agent and self.current_map:
             action = MoveForward()
             if self.current_agent.perform_action(action, self.current_map, AppEvent.AGENT_MOVED):
-              print("")
+                print("")
 
     def _on_agent_move_up(self) -> None:
         """Maneja el evento de movimiento hacia arriba del agente."""
         if self.current_agent and self.current_map:
             action = MoveUp()
             if self.current_agent.perform_action(action, self.current_map, AppEvent.AGENT_MOVED):
-              print("_on_agent_move_up\n")
+                print("_on_agent_move_up\n")
 
     def _on_agent_move_down(self) -> None:
         """Maneja el evento de movimiento hacia abajo del agente."""
         if self.current_agent and self.current_map:
             action = MoveDown()
             if self.current_agent.perform_action(action, self.current_map, AppEvent.AGENT_MOVED):
-              print("_on_agent_move_down\n")
+                print("_on_agent_move_down\n")
 
     def _on_agent_move_right(self) -> None:
         """Maneja el evento de movimiento hacia la derecha este del agente."""
         if self.current_agent and self.current_map:
             action = MoveRight()
             if self.current_agent.perform_action(action, self.current_map, AppEvent.AGENT_MOVED):
-              print("_on_agent_move_right\n")
+                print("_on_agent_move_right\n")
 
     def _on_agent_move_left(self) -> None:
         """Maneja el evento de movimiento hacia la izquierda del agente."""
         if self.current_agent and self.current_map:
             action = MoveLeft()
             if self.current_agent.perform_action(action, self.current_map, AppEvent.AGENT_MOVED):
-              print("_on_agent_move_left\n")
+                print("_on_agent_move_left\n")
+
+    def _on_switch_game_mode(self) -> None:
+        """Maneja el evento de cambiar modo de juego."""
+        # Alternar entre MAZE y MAP
+        new_mode = GameMode.MAP if self.game_mode == GameMode.MAZE else GameMode.MAZE
+        self.switch_game_mode(new_mode)
+
+    def _load_game_state(self, mode: GameMode) -> bool:
+        """
+        Carga el estado del juego según el modo especificado.
+
+        Args:
+            mode: Modo de juego a cargar
+
+        Returns:
+            bool: True si la carga fue exitosa
+        """
+        try:
+            config = self.current_game_config
+
+            # Cargar mapa
+            self.current_map = self.map_loader.load_map(config.map_path)
+
+            # Calcular tamaño de ventana
+            width, height = MapRenderer.calculate_window_size(
+                self.current_map, self._config_manager.display
+            )
+
+            # Inicializar el motor gráfico
+            if self.graphics_engine._screen:
+                self.graphics_engine.resize(width + 1, height + 1)
+            else:
+                self.graphics_engine.initialize(
+                    width + 1, height + 1, self._config_manager.app.WINDOW_TITLE)
+
+            # Crear el renderer
+            self.map_renderer = MapRenderer(
+                self.graphics_engine, self._config_manager
+            )
+
+            self.coordinate_system = CoordinateSystem(self._config_manager)
+
+            # Marcar posiciones inicial y final
+            initial_row, initial_col = config.initial_position
+            goal_row, goal_col = config.goal_position
+
+            self.current_map.grid[initial_row][initial_col].add_mark(
+                CellMark.INITIAL)
+            self.current_map.grid[goal_row][goal_col].add_mark(CellMark.FINAL)
+
+            # Aplicar fog of war según modo
+            if mode == GameMode.MAZE:
+                self.current_map.mask_all()
+
+                # Marcar puntos de decisión
+                self.current_map.mark_decision_points()
+                print("Modo MAZE: Fog of War activado")
+            else:  # MAP
+                # Descubrir todo el mapa
+                for row in range(self.current_map.rows):
+                    for col in range(self.current_map.cols):
+                        self.current_map.discover_cell(row, col)
+                print("Modo MAP: Mapa completamente visible")
+
+            # Crear entidad según tipo
+            # Por ahora solo soportamos agentes (entity_type = "1", "2", "3", etc.)
+            self.current_agent = AgentFactory.create_agent(
+                config.entity_type, self.event_bus
+            )
+
+            # Inicializar agente en el mapa
+            self.current_agent.initialize_on_map(self.current_map)
+
+            return True
+
+        except Exception as e:
+            print(f"Error cargando estado del juego: {e}")
+            return False
+
+    def switch_game_mode(self, new_mode: GameMode) -> bool:
+        """
+        Cambia el modo de juego actual.
+
+        Args:
+            new_mode: Nuevo modo de juego
+
+        Returns:
+            bool: True si el cambio fue exitoso
+        """
+        if new_mode == self.game_mode:
+            print(f"Ya estás en modo {new_mode.value.upper()}")
+            return False
+
+        try:
+            print(
+                f"\nCambiando de modo {self.game_mode.value.upper()} → {new_mode.value.upper()}...")
+
+            # Cargar configuración del nuevo modo
+            self.current_game_config = self.game_config_loader.load_config(
+                new_mode)
+
+            # Actualizar modo actual
+            self.game_mode = new_mode
+
+            # Reiniciar agente si existe
+            if self.current_agent:
+                self.current_agent.reset()
+
+            # Cargar estado del nuevo modo
+            if self._load_game_state(new_mode):
+                print(f"Modo {new_mode.value.upper()} cargado exitosamente\n")
+                return True
+            else:
+                print(f"Error cargando modo {new_mode.value.upper()}")
+                return False
+
+        except GameConfigLoaderError as e:
+            print(f"Error cambiando modo de juego: {e}")
+            return False
 
     def run(self) -> None:
         """Ejecuta el ciclo principal de la aplicación."""
@@ -288,9 +399,10 @@ class Application:
         print("  R - Recargar aplicación")
         print("  E - Alternar modo edición")
         print("  V - Salir del modo edición")
+        print("  M - Cambiar modo de juego (MAZE - MAP)")
         print("  Click - Inspeccionar celda (o editar en modo edición)")
         print("  0-9 - Cambiar tipo de terreno (en modo edición)")
-        
+
         print("  Controles de Agente:")
         print("    J - Girar izquierda")
         print("    L - Girar derecha")

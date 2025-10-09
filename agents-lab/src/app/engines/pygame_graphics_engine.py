@@ -43,6 +43,11 @@ class PygameGraphicsEngine(IGraphicsEngine):
         text_rect = text_surface.get_rect(center=(x, y))
         self._screen.blit(text_surface, text_rect)
 
+    def resize(self, width: int, height: int) -> None:
+        """Redimensiona la ventana."""
+        self._ensure_initialized()
+        self._screen = pygame.display.set_mode((width, height))
+
     def present(self) -> None:
         """Presenta el frame."""
         self._ensure_initialized()
