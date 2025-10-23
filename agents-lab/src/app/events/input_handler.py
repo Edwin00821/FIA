@@ -46,6 +46,8 @@ class InputHandler:
             pygame.K_p: AppEvent.PLAYBACK_START,
             pygame.K_t: AppEvent.TOGGLE_PLAYBACK_MODE,
             pygame.K_c: AppEvent.SEARCH_CANCEL,
+
+            pygame.K_g: AppEvent.TOGGLE_TREE_VIEW,
         }
 
     def process_events(self) -> None:

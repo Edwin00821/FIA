@@ -1,6 +1,8 @@
-from typing import Tuple
+from typing import Tuple, Optional
 
 from src.core.map import Map
+
+from src.app.services.visualization_state import VisualizationState
 
 from src.app.config.config_manager import ConfigManager, DisplayConfig
 
@@ -10,6 +12,7 @@ from .header_renderer import HeaderRenderer
 from .grid_renderer import GridRenderer
 from .terrain_renderer import TerrainRenderer
 from .marks_renderer import MarksRenderer
+from .search_renderer import SearchRenderer
 
 
 class MapRenderer:
@@ -33,15 +36,16 @@ class MapRenderer:
         self.config_manager = config_manager
 
         self.header_renderer = HeaderRenderer(graphics_engine, config_manager)
-        
+
         self.grid_renderer = GridRenderer(graphics_engine, config_manager)
-        
+
         self.terrain_renderer = TerrainRenderer(
             graphics_engine, config_manager)
-        
-        self.marks_renderer = MarksRenderer(graphics_engine, config_manager)
 
-    def render_map(self, map_obj: Map) -> None:
+        self.marks_renderer = MarksRenderer(graphics_engine, config_manager)
+        self.search_renderer = SearchRenderer(graphics_engine, config_manager)
+
+    def render_map(self, map_obj: Map, viz_state: Optional[VisualizationState] = None) -> None:
         """
         Renderizar completamente un mapa en la pantalla.
 
@@ -53,6 +57,10 @@ class MapRenderer:
         self.header_renderer.render(map_obj)
         self.grid_renderer.render(map_obj)
         self.terrain_renderer.render(map_obj)
+
+        if viz_state:
+            self.search_renderer.render(map_obj, viz_state)
+
         self.marks_renderer.render(map_obj)
 
         self.gfx.present()
@@ -62,13 +70,18 @@ class MapRenderer:
         self.gfx.clear_screen(self.disp.COLOR_BG)
 
     @staticmethod
-    def calculate_window_size(map_obj: Map, display_config: DisplayConfig) -> Tuple[int, int]:
+    def calculate_window_size(
+        map_obj: Map,
+        display_config: DisplayConfig,
+        include_tree_panel: bool = False
+    ) -> Tuple[int, int]:
         """
         Calcular el tamaño necesario de la ventana para mostrar el mapa completo.
 
         Args:
             map_obj: El mapa para calcular dimensiones.
             display_config: Configuración de visualización.
+            include_tree_panel: Si incluir espacio para el panel del árbol
 
         Returns:
             (ancho, alto) en píxeles.
@@ -77,4 +90,9 @@ class MapRenderer:
             map_obj.cols * display_config.CELL_WIDTH + 20
         height = display_config.HEADER_HEIGHT + \
             map_obj.rows * display_config.CELL_HEIGHT + 20
+
+        # Agregar espacio para panel de árbol si es necesario
+        if include_tree_panel:
+            width += 400
+
         return width, height

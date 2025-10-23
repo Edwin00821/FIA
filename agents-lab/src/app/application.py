@@ -24,6 +24,7 @@ from src.app.services.search_service import SearchService
 from src.app.services.visualization_state import VisualizationState
 
 from src.app.rendering.map_renderer import MapRenderer
+from src.app.rendering.tree_console_renderer import TreeConsoleRenderer
 
 
 class Application:
@@ -57,6 +58,7 @@ class Application:
         self.current_agent: Agent = None
         self.search_service = SearchService(self.event_bus)
         self.viz_state = VisualizationState()
+        self.tree_console_renderer = TreeConsoleRenderer()
 
     def initialize(self) -> bool:
         """Inicializa el motor de la aplicación."""
@@ -147,6 +149,9 @@ class Application:
             AppEvent.PLAYBACK_STOP, self._on_playback_stop)
         self.event_bus.register_handler(
             AppEvent.TOGGLE_PLAYBACK_MODE, self._on_toggle_playback_mode)
+
+        self.event_bus.register_handler(
+            AppEvent.TOGGLE_TREE_VIEW, self._on_toggle_tree_view)
 
     def _on_cell_clicked(self, position) -> None:
         """Maneja el evento de click en una celda."""
@@ -416,8 +421,7 @@ class Application:
         if not self.current_map or not self.current_game_config:
             print("No hay mapa cargado")
             return
-
-        print("\n=== Ejecutando BFS ===")
+        
         start_pos = self.current_game_config.initial_position
         goal_pos = self.current_game_config.goal_position
 
@@ -430,11 +434,10 @@ class Application:
         )
 
         if result.success:
-            print(f"✓ Camino encontrado: {len(result.solution_path)} celdas")
-            print(f"  Nodos expandidos: {result.nodes_expanded}")
-            print(f"  Tamaño máximo de frontera: {result.max_frontier_size}")
+            tree_output = self.tree_console_renderer.render_all_trees(result)
+            print("\n" + tree_output)
         else:
-            print("✗ No se encontró camino")
+            print("No se encontró camino")
 
     def _on_run_dfs(self) -> None:
         """Maneja el evento de ejecutar DFS."""
@@ -442,7 +445,6 @@ class Application:
             print("No hay mapa cargado")
             return
 
-        print("\n=== Ejecutando DFS ===")
         start_pos = self.current_game_config.initial_position
         goal_pos = self.current_game_config.goal_position
 
@@ -459,15 +461,14 @@ class Application:
         )
 
         if result.success:
-            print(f"✓ Camino encontrado: {len(result.solution_path)} celdas")
-            print(f"  Nodos expandidos: {result.nodes_expanded}")
-            print(f"  Tamaño máximo de frontera: {result.max_frontier_size}")
+            tree_output = self.tree_console_renderer.render_all_trees(result)
+            print("\n" + tree_output)
         else:
-            print("✗ No se encontró camino")
+            print("No se encontró camino")
 
     def _on_search_complete(self, result, algorithm_type) -> None:
         """Maneja el evento de búsqueda completada."""
-        print(f"\n=== Búsqueda {algorithm_type.value.upper()} completada ===")
+        print(f"\n=================== Búsqueda {algorithm_type.value.upper()} completada ===================")
         self.viz_state.update_from_result(result)
 
     def _on_search_cancel(self) -> None:
@@ -495,6 +496,12 @@ class Application:
         """Maneja el evento de alternar modo de reproducción."""
         new_mode = self.search_service.toggle_playback_mode()
         self.viz_state.playback_mode = new_mode
+
+    def _on_toggle_tree_view(self) -> None:
+        """Maneja el evento de alternar vista del árbol."""
+        self.viz_state.toggle_tree_view()
+        state = "activada" if self.viz_state.show_tree else "desactivada"
+        print(f"Vista del árbol: {state}")
 
     def run(self) -> None:
         """Ejecuta el ciclo principal de la aplicación."""
@@ -524,6 +531,7 @@ class Application:
         print("    F - Ejecutar DFS")
         print("    P - Iniciar reproducción")
         print("    T - Alternar modo reproducción (paso a paso / decisión)")
+        print("    G - Alternar vista del árbol de búsqueda")
         print("    C - Cancelar búsqueda/reproducción")
         print()
 
@@ -571,7 +579,7 @@ class Application:
     def _render(self) -> None:
         """Renderiza un frame."""
         if self.current_map and self.map_renderer:
-            self.map_renderer.render_map(self.current_map)
+            self.map_renderer.render_map(self.current_map, self.viz_state)
 
         if self.current_agent:
             self.current_agent.perceive(self.current_map)
