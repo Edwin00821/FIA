@@ -1,8 +1,8 @@
 {
   "mode": "maze",
   "map_path": "data/maze/board.txt",
-  "initial_position": [9, 0],
-  "goal_position": [1, 4],
+  "initial_position": "10A",
+  "goal_position": "2O",
   "entity_type": "3",
   "entity_config": {}
 }
