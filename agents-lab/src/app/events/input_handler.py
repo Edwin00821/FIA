@@ -33,13 +33,19 @@ class InputHandler:
             # Controles de agente
             pygame.K_j: AppEvent.AGENT_TURN_LEFT,
             pygame.K_l: AppEvent.AGENT_TURN_RIGHT,
-            
+
             pygame.K_SPACE: AppEvent.AGENT_MOVE_FORWARD,
-            
+
             pygame.K_w: AppEvent.AGENT_MOVE_UP,
             pygame.K_s: AppEvent.AGENT_MOVE_DOWN,
             pygame.K_d: AppEvent.AGENT_MOVE_RIGHT,
             pygame.K_a: AppEvent.AGENT_MOVE_LEFT,
+
+            pygame.K_b: AppEvent.RUN_BFS,
+            pygame.K_f: AppEvent.RUN_DFS,
+            pygame.K_p: AppEvent.PLAYBACK_START,
+            pygame.K_t: AppEvent.TOGGLE_PLAYBACK_MODE,
+            pygame.K_c: AppEvent.SEARCH_CANCEL,
         }
 
     def process_events(self) -> None:
@@ -88,7 +94,7 @@ class InputHandler:
         """
         # Verificar si es una tecla numérica
         self._handle_number_key(key)
-        
+
         # Verificar mapeos de aplicación
         app_event = self._key_mappings.get(key)
         if app_event:

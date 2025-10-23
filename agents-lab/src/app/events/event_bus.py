@@ -30,6 +30,22 @@ class AppEvent(Enum):
 
     SWITCH_GAME_MODE = "switch_game_mode"
 
+    SEARCH_START = "search_start"
+    SEARCH_STEP = "search_step"
+    SEARCH_COMPLETE = "search_complete"
+    SEARCH_CANCEL = "search_cancel"
+
+    PLAYBACK_START = "playback_start"
+    PLAYBACK_STEP = "playback_step"
+    PLAYBACK_COMPLETE = "playback_complete"
+    PLAYBACK_PAUSE = "playback_pause"
+    PLAYBACK_RESUME = "playback_resume"
+    PLAYBACK_STOP = "playback_stop"
+
+    RUN_BFS = "run_bfs"
+    RUN_DFS = "run_dfs"
+    TOGGLE_PLAYBACK_MODE = "toggle_playback_mode"
+
 
 class EventBus:
     """

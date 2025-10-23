@@ -4,7 +4,8 @@ from src.core.cell import CellMark
 from src.core.agent import Agent
 from src.core.agent_factory import AgentFactory
 from src.core.actions import TurnLeft, TurnRight, MoveForward, MoveUp, MoveDown, MoveRight, MoveLeft
-from src.core.game_mode import GameMode, GameConfig
+from src.core.game_mode import GameMode
+from src.core.search import SearchAlgorithmType
 
 from src.utils.map_loader import MapLoader
 from src.utils.game_config_loader import GameConfigLoader, GameConfigLoaderError
@@ -19,6 +20,8 @@ from src.app.events.event_bus import EventBus, AppEvent
 from src.app.events.input_handler import InputHandler
 
 from src.app.services.map_editor import MapEditor
+from src.app.services.search_service import SearchService
+from src.app.services.visualization_state import VisualizationState
 
 from src.app.rendering.map_renderer import MapRenderer
 
@@ -52,6 +55,8 @@ class Application:
         self.current_map = None
 
         self.current_agent: Agent = None
+        self.search_service = SearchService(self.event_bus)
+        self.viz_state = VisualizationState()
 
     def initialize(self) -> bool:
         """Inicializa el motor de la aplicación."""
@@ -122,6 +127,26 @@ class Application:
             AppEvent.AGENT_MOVE_RIGHT, self._on_agent_move_right)
         self.event_bus.register_handler(
             AppEvent.AGENT_MOVE_LEFT, self._on_agent_move_left)
+
+        # Handlers de búsqueda
+        self.event_bus.register_handler(
+            AppEvent.RUN_BFS, self._on_run_bfs)
+        self.event_bus.register_handler(
+            AppEvent.RUN_DFS, self._on_run_dfs)
+        self.event_bus.register_handler(
+            AppEvent.SEARCH_COMPLETE, self._on_search_complete)
+        self.event_bus.register_handler(
+            AppEvent.SEARCH_CANCEL, self._on_search_cancel)
+
+        # Handlers de reproducción
+        self.event_bus.register_handler(
+            AppEvent.PLAYBACK_START, self._on_playback_start)
+        self.event_bus.register_handler(
+            AppEvent.PLAYBACK_STEP, self._on_playback_step)
+        self.event_bus.register_handler(
+            AppEvent.PLAYBACK_STOP, self._on_playback_stop)
+        self.event_bus.register_handler(
+            AppEvent.TOGGLE_PLAYBACK_MODE, self._on_toggle_playback_mode)
 
     def _on_cell_clicked(self, position) -> None:
         """Maneja el evento de click en una celda."""
@@ -386,6 +411,91 @@ class Application:
             print(f"Error cambiando modo de juego: {e}")
             return False
 
+    def _on_run_bfs(self) -> None:
+        """Maneja el evento de ejecutar BFS."""
+        if not self.current_map or not self.current_game_config:
+            print("No hay mapa cargado")
+            return
+
+        print("\n=== Ejecutando BFS ===")
+        start_pos = self.current_game_config.initial_position
+        goal_pos = self.current_game_config.goal_position
+
+        result = self.search_service.run_search(
+            SearchAlgorithmType.BFS,
+            self.current_map,
+            start_pos,
+            goal_pos,
+            visualize_realtime=False
+        )
+
+        if result.success:
+            print(f"✓ Camino encontrado: {len(result.solution_path)} celdas")
+            print(f"  Nodos expandidos: {result.nodes_expanded}")
+            print(f"  Tamaño máximo de frontera: {result.max_frontier_size}")
+        else:
+            print("✗ No se encontró camino")
+
+    def _on_run_dfs(self) -> None:
+        """Maneja el evento de ejecutar DFS."""
+        if not self.current_map or not self.current_game_config:
+            print("No hay mapa cargado")
+            return
+
+        print("\n=== Ejecutando DFS ===")
+        start_pos = self.current_game_config.initial_position
+        goal_pos = self.current_game_config.goal_position
+
+        # Prioridad direccional por defecto
+        direction_priority = ['up', 'right', 'down', 'left']
+
+        result = self.search_service.run_search(
+            SearchAlgorithmType.DFS,
+            self.current_map,
+            start_pos,
+            goal_pos,
+            visualize_realtime=False,
+            direction_priority=direction_priority
+        )
+
+        if result.success:
+            print(f"✓ Camino encontrado: {len(result.solution_path)} celdas")
+            print(f"  Nodos expandidos: {result.nodes_expanded}")
+            print(f"  Tamaño máximo de frontera: {result.max_frontier_size}")
+        else:
+            print("✗ No se encontró camino")
+
+    def _on_search_complete(self, result, algorithm_type) -> None:
+        """Maneja el evento de búsqueda completada."""
+        print(f"\n=== Búsqueda {algorithm_type.value.upper()} completada ===")
+        self.viz_state.update_from_result(result)
+
+    def _on_search_cancel(self) -> None:
+        """Maneja el evento de cancelar búsqueda."""
+        print("\nBúsqueda cancelada")
+        self.search_service.cancel_search()
+        self.viz_state.clear()
+
+    def _on_playback_start(self, mode) -> None:
+        """Maneja el evento de iniciar reproducción."""
+        print(f"\n=== Reproducción iniciada (modo: {mode}) ===")
+        self.viz_state.is_playing = True
+        self.viz_state.playback_mode = mode
+
+    def _on_playback_step(self, step) -> None:
+        """Maneja el evento de paso de reproducción."""
+        self.viz_state.update_from_step(step)
+
+    def _on_playback_stop(self) -> None:
+        """Maneja el evento de detener reproducción."""
+        print("\n=== Reproducción detenida ===")
+        self.viz_state.is_playing = False
+
+    def _on_toggle_playback_mode(self) -> None:
+        """Maneja el evento de alternar modo de reproducción."""
+        new_mode = self.search_service.toggle_playback_mode()
+        self.viz_state.playback_mode = new_mode
+
     def run(self) -> None:
         """Ejecuta el ciclo principal de la aplicación."""
         if not self.initialize():
@@ -406,8 +516,15 @@ class Application:
         print("  Controles de Agente:")
         print("    J - Girar izquierda")
         print("    L - Girar derecha")
-        print("    ESPACE - Mover enfrente")
-        print("    WSAD - Mover en direcciones (Arriba/Abajo/Derecha/Izquierda)")
+        print("    SPACE - Mover enfrente")
+        print("    WASD - Mover en direcciones (Arriba/Abajo/Derecha/Izquierda)")
+
+        print("  Controles de Búsqueda:")
+        print("    B - Ejecutar BFS")
+        print("    F - Ejecutar DFS")
+        print("    P - Iniciar reproducción")
+        print("    T - Alternar modo reproducción (paso a paso / decisión)")
+        print("    C - Cancelar búsqueda/reproducción")
         print()
 
         try:
@@ -438,6 +555,18 @@ class Application:
     def _update(self, delta_time: float) -> None:
         """Actualiza la lógica de la aplicación."""
         self.input_handler.process_events()
+
+        # Actualizar reproducción si está activa
+        if self.search_service.is_playing and not self.search_service.is_paused:
+            # Verificar si es momento de avanzar al siguiente paso
+            if not hasattr(self, '_last_playback_time'):
+                self._last_playback_time = 0
+
+            self._last_playback_time += delta_time
+
+            if self._last_playback_time >= self.search_service.playback_speed:
+                self._last_playback_time = 0
+                self.search_service.next_playback_step()
 
     def _render(self) -> None:
         """Renderiza un frame."""
