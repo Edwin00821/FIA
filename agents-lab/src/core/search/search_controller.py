@@ -11,6 +11,7 @@ class SearchAlgorithmType(Enum):
     """Tipos de algoritmos de búsqueda disponibles."""
     BFS = "bfs"
     DFS = "dfs"
+    ASTAR = "astar"
 
 
 class SearchController:
