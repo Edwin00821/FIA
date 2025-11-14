@@ -8,6 +8,7 @@ if TYPE_CHECKING:
     from .cost_strategy import CostStrategy
     from .cell import TerrainType
 
+
 class Being:
     """
     Clase base para seres que pueden percibir el entorno.
@@ -117,6 +118,26 @@ class Being:
             return self.cost_strategy.get_cost(terrain)
         # Costo por defecto si no hay estrategia
         return 1.0 if terrain != TerrainType.WALL else float('inf')
+
+    def discover_adjacent_cells(self, map_obj: Map, position: Tuple[int, int]) -> None:
+        """
+        Descubre las celdas adyacentes a una posición (4-conectividad).
+
+        Args:
+            map_obj: El mapa donde descubrir celdas
+            position: Posición central desde donde descubrir
+        """
+        row, col = position
+
+        # 4 direcciones: arriba, derecha, abajo, izquierda
+        directions = [(-1, 0), (0, 1), (1, 0), (0, -1)]
+
+        for dr, dc in directions:
+            new_row, new_col = row + dr, col + dc
+
+            # Verificar límites
+            if 0 <= new_row < map_obj.rows and 0 <= new_col < map_obj.cols:
+                map_obj.discover_cell(new_row, new_col)
 
     def __str__(self) -> str:
         """Representación string del ser."""

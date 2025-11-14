@@ -112,7 +112,9 @@ class DepthFirstSearch(SearchAlgorithm):
                     root_node=root,
                     steps=self.steps,
                     nodes_expanded=self.nodes_expanded,
-                    max_frontier_size=self.max_frontier_size
+                    max_frontier_size=self.max_frontier_size,
+                    goal_node=current_node,
+                    path_cost=float(len(current_node.get_path_positions()) - 1)
                 )
 
             # Obtener vecinos ordenados por prioridad
@@ -166,5 +168,7 @@ class DepthFirstSearch(SearchAlgorithm):
             root_node=root,
             steps=self.steps,
             nodes_expanded=self.nodes_expanded,
-            max_frontier_size=self.max_frontier_size
+            max_frontier_size=self.max_frontier_size,
+            goal_node=None,
+            path_cost=float('inf')
         )

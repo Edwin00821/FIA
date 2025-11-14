@@ -46,6 +46,9 @@ class SearchResult:
     steps: List[SearchStep] = None
     nodes_expanded: int = 0
     max_frontier_size: int = 0
+    
+    goal_node: Optional[SearchNode] = None
+    path_cost: float = 0.0
 
     def __post_init__(self):
         """Inicializa listas si son None."""

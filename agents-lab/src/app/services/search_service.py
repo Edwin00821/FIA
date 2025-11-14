@@ -1,4 +1,4 @@
-from typing import Optional, Callable
+from typing import Optional
 import time
 
 from src.core.map import Map

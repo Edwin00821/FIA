@@ -44,6 +44,7 @@ class AppEvent(Enum):
 
     RUN_BFS = "run_bfs"
     RUN_DFS = "run_dfs"
+    RUN_ASTAR = "run_astar"
     TOGGLE_PLAYBACK_MODE = "toggle_playback_mode"
     
     TOGGLE_TREE_VIEW = "toggle_tree_view"

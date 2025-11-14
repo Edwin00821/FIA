@@ -1,6 +1,6 @@
 import time
 
-from src.core.cell import CellMark
+from src.core.cell import CellMark, TerrainType
 from src.core.agent import Agent
 from src.core.agent_factory import AgentFactory
 from src.core.actions import TurnLeft, TurnRight, MoveForward, MoveUp, MoveDown, MoveRight, MoveLeft
@@ -26,6 +26,12 @@ from src.app.services.visualization_state import VisualizationState
 from src.app.rendering.map_renderer import MapRenderer
 from src.app.rendering.tree_console_renderer import TreeConsoleRenderer
 
+from src.core.search.astar import AStarSearch
+from src.core.heuristic import manhattan_distance
+from src.core.cost_strategy import CostStrategyFactory, BeingType
+from src.core.being import Being
+from src.core.sensors import AllDirectionsSensor
+
 
 class Application:
     """Motor principal de la aplicación que coordina todos los componentes."""
@@ -50,7 +56,7 @@ class Application:
         self.game_config_loader = GameConfigLoader(
             self._config_manager.app.DATA_DIRECTORY)
 
-        self.game_mode: GameMode = GameMode.MAZE
+        self.game_mode: GameMode = GameMode.MAP
 
         self.map_renderer = None
         self.current_map = None
@@ -139,6 +145,8 @@ class Application:
             AppEvent.SEARCH_COMPLETE, self._on_search_complete)
         self.event_bus.register_handler(
             AppEvent.SEARCH_CANCEL, self._on_search_cancel)
+        self.event_bus.register_handler(
+            AppEvent.RUN_ASTAR, self._on_run_astar)
 
         # Handlers de reproducción
         self.event_bus.register_handler(
@@ -352,22 +360,20 @@ class Application:
 
                 # Marcar puntos de decisión
                 self.current_map.mark_decision_points()
+
+                # Crear entidad según tipo
+                # Por ahora solo soportamos agentes (entity_type = "1", "2", "3", etc.)
+                self.current_agent = AgentFactory.create_agent(
+                    config.entity_type, self.event_bus
+                )
+
+                # Inicializar agente en el mapa
+                self.current_agent.initialize_on_map(self.current_map)
+                
                 print("Modo MAZE: Fog of War activado")
             else:  # MAP
                 # Descubrir todo el mapa
-                for row in range(self.current_map.rows):
-                    for col in range(self.current_map.cols):
-                        self.current_map.discover_cell(row, col)
-                print("Modo MAP: Mapa completamente visible")
-
-            # Crear entidad según tipo
-            # Por ahora solo soportamos agentes (entity_type = "1", "2", "3", etc.)
-            self.current_agent = AgentFactory.create_agent(
-                config.entity_type, self.event_bus
-            )
-
-            # Inicializar agente en el mapa
-            self.current_agent.initialize_on_map(self.current_map)
+                self.current_map.mask_all()
 
             return True
 
@@ -421,7 +427,7 @@ class Application:
         if not self.current_map or not self.current_game_config:
             print("No hay mapa cargado")
             return
-        
+
         start_pos = self.current_game_config.initial_position
         goal_pos = self.current_game_config.goal_position
 
@@ -466,9 +472,78 @@ class Application:
         else:
             print("No se encontró camino")
 
+    def _on_run_astar(self) -> None:
+        """Maneja el evento de ejecutar A*."""
+        if not self.current_map or not self.current_game_config:
+            print("No hay mapa cargado")
+            return
+
+        start_pos = self.current_game_config.initial_position
+        goal_pos = self.current_game_config.goal_position
+
+        # Determinar el tipo de being según entity_type
+        entity_type = self.current_game_config.entity_type
+
+        # Crear being con sensor y estrategia de costos
+        being = Being(AllDirectionsSensor())
+        
+        monkey = CostStrategyFactory.create(BeingType.MONKEY)
+        octopus = CostStrategyFactory.create(BeingType.OCTOPUS)
+        human = CostStrategyFactory.create(BeingType.HUMAN)
+        
+        # Terrenos a probar
+        terrains = [
+            TerrainType.LAND,
+            TerrainType.WATER,
+            TerrainType.SAND,
+            TerrainType.FOREST,
+            TerrainType.MOUNTAIN,
+        ]
+        
+        print(f"{'Terreno':<12} | {'Monkey':<8} | {'Octopus':<8} | {'Human':<8}")
+        print("-" * 50)
+        
+        for terrain in terrains:
+            monkey_cost = monkey.get_cost(terrain)
+            octopus_cost = octopus.get_cost(terrain)
+            human_cost = human.get_cost(terrain)
+            
+            # Formatear infinito como "N/A"
+            m_str = "N/A" if monkey_cost == float('inf') else str(int(monkey_cost))
+            o_str = "N/A" if octopus_cost == float('inf') else str(int(octopus_cost))
+            h_str = "N/A" if human_cost == float('inf') else str(int(human_cost))
+            
+            print(f"{terrain.name:<12} | {m_str:<8} | {o_str:<8} | {h_str:<8}")
+
+        # Establecer estrategia de costos si es un tipo conocido
+        try:
+            cost_strategy = CostStrategyFactory.from_string(entity_type)
+            being.set_cost_strategy(cost_strategy)
+        except ValueError:
+            print(
+                f"Tipo de entidad '{entity_type}' no tiene costos definidos, usando costos por defecto")
+            cost_strategy = None
+
+        astar = AStarSearch(
+            heuristic_func=manhattan_distance,
+            cost_strategy=cost_strategy,
+            being=being,
+            use_fog_of_war=True
+        )
+        # Ejecutar A* con fog of war
+        result = astar.search(
+            self.current_map, start_pos, goal_pos)
+
+        if result.success:
+            tree_output = self.tree_console_renderer.render_all_trees(result)
+            print("\n" + tree_output)
+        else:
+            print("No se encontró camino")
+
     def _on_search_complete(self, result, algorithm_type) -> None:
         """Maneja el evento de búsqueda completada."""
-        print(f"\n=================== Búsqueda {algorithm_type.value.upper()} completada ===================")
+        print(
+            f"\n=================== Búsqueda {algorithm_type.value.upper()} completada ===================")
         self.viz_state.update_from_result(result)
 
     def _on_search_cancel(self) -> None:
@@ -529,6 +604,7 @@ class Application:
         print("  Controles de Búsqueda:")
         print("    B - Ejecutar BFS")
         print("    F - Ejecutar DFS")
+        print("    H - Ejecutar A*")
         print("    P - Iniciar reproducción")
         print("    T - Alternar modo reproducción (paso a paso / decisión)")
         print("    G - Alternar vista del árbol de búsqueda")

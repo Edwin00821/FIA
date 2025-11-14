@@ -48,6 +48,7 @@ class InputHandler:
             pygame.K_c: AppEvent.SEARCH_CANCEL,
 
             pygame.K_g: AppEvent.TOGGLE_TREE_VIEW,
+            pygame.K_h: AppEvent.RUN_ASTAR,
         }
 
     def process_events(self) -> None:
