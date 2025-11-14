@@ -1,5 +1,6 @@
 from typing import Tuple, List, Set, Optional, Callable, TYPE_CHECKING
 import heapq
+from collections import deque
 
 from .search_algorithm import SearchAlgorithm
 from .search_node import SearchNode
@@ -10,6 +11,7 @@ from ..cost_strategy import CostStrategy
 
 if TYPE_CHECKING:
     from ..being import Being
+    from ...app.services.astar_visualization_state import AStarVisualizationState
 
 
 class AStarSearch(SearchAlgorithm):
@@ -27,7 +29,8 @@ class AStarSearch(SearchAlgorithm):
         heuristic_func: Callable[[Tuple[int, int], Tuple[int, int]], float],
         cost_strategy: Optional[CostStrategy] = None,
         being: Optional['Being'] = None,
-        use_fog_of_war: bool = False
+        use_fog_of_war: bool = False,
+        viz_state: Optional['AStarVisualizationState'] = None
     ):
         """
         Inicializa el algoritmo A*.
@@ -37,11 +40,13 @@ class AStarSearch(SearchAlgorithm):
             cost_strategy: Estrategia de costos por terreno (opcional)
             being: Ser que realiza la búsqueda (para descubrir celdas)
             use_fog_of_war: Si True, solo expande nodos en celdas descubiertas
+            viz_state: Estado de visualización para actualizar en tiempo real
         """
         self.heuristic_func = heuristic_func
         self.cost_strategy = cost_strategy
         self.being = being
         self.use_fog_of_war = use_fog_of_war
+        self.viz_state = viz_state
     
     def search(
         self,
@@ -62,10 +67,17 @@ class AStarSearch(SearchAlgorithm):
         Returns:
             SearchResult con el resultado de la búsqueda
         """
+        # Activar visualización si existe
+        if self.viz_state:
+            self.viz_state.clear()
+            self.viz_state.activate()
+        
         # Descubrir celda inicial y sus adyacentes
         if self.use_fog_of_war and self.being:
             map_obj.discover_cell(start[0], start[1])
             self.being.discover_adjacent_cells(map_obj, start)
+            # También descubrir la meta
+            map_obj.discover_cell(goal[0], goal[1])
         
         # Inicializar nodo raíz
         root = SearchNode(
@@ -81,6 +93,12 @@ class AStarSearch(SearchAlgorithm):
         
         # Diccionario para tracking de nodos por posición
         nodes_by_position = {start: root}
+        
+        # Actualizar visualización inicial
+        if self.viz_state:
+            self.viz_state.add_node(
+                start, root.g_cost, root.h_cost, root.f_cost, is_open=True
+            )
         
         nodes_expanded = 0
         
@@ -100,8 +118,16 @@ class AStarSearch(SearchAlgorithm):
             closed_set.add(current.position)
             nodes_expanded += 1
             
+            # Actualizar visualización
+            if self.viz_state:
+                self.viz_state.mark_as_closed(current.position)
+                self.viz_state.current_position = current.position
+            
             # ¿Llegamos al objetivo?
             if current.position == goal:
+                # if self.viz_state:
+                #     self.viz_state.deactivate()
+                
                 return SearchResult(
                     success=True,
                     root_node=root,
@@ -141,6 +167,16 @@ class AStarSearch(SearchAlgorithm):
                         
                         # Re-agregar a open_set con nuevo costo
                         heapq.heappush(open_set, neighbor_node)
+                        
+                        # Actualizar visualización
+                        if self.viz_state:
+                            self.viz_state.add_node(
+                                neighbor_pos,
+                                neighbor_node.g_cost,
+                                neighbor_node.h_cost,
+                                neighbor_node.f_cost,
+                                is_open=True
+                            )
                 else:
                     # Crear nuevo nodo
                     neighbor_node = SearchNode(
@@ -154,10 +190,23 @@ class AStarSearch(SearchAlgorithm):
                     nodes_by_position[neighbor_pos] = neighbor_node
                     heapq.heappush(open_set, neighbor_node)
                     
+                    # Actualizar visualización
+                    if self.viz_state:
+                        self.viz_state.add_node(
+                            neighbor_pos,
+                            neighbor_node.g_cost,
+                            neighbor_node.h_cost,
+                            neighbor_node.f_cost,
+                            is_open=True
+                        )
+                    
                     # Agregar como hijo para construir árbol
                     current.add_child(neighbor_node)
         
         # No se encontró camino
+        if self.viz_state:
+            self.viz_state.deactivate()
+        
         return SearchResult(
             success=False,
             root_node=root,

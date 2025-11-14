@@ -22,6 +22,7 @@ from src.app.events.input_handler import InputHandler
 from src.app.services.map_editor import MapEditor
 from src.app.services.search_service import SearchService
 from src.app.services.visualization_state import VisualizationState
+from src.app.services.astar_visualization_state import AStarVisualizationState
 
 from src.app.rendering.map_renderer import MapRenderer
 from src.app.rendering.tree_console_renderer import TreeConsoleRenderer
@@ -65,6 +66,7 @@ class Application:
         self.search_service = SearchService(self.event_bus)
         self.viz_state = VisualizationState()
         self.tree_console_renderer = TreeConsoleRenderer()
+        self.astar_viz_state = AStarVisualizationState()
 
     def initialize(self) -> bool:
         """Inicializa el motor de la aplicación."""
@@ -369,7 +371,7 @@ class Application:
 
                 # Inicializar agente en el mapa
                 self.current_agent.initialize_on_map(self.current_map)
-                
+
                 print("Modo MAZE: Fog of War activado")
             else:  # MAP
                 # Descubrir todo el mapa
@@ -486,11 +488,11 @@ class Application:
 
         # Crear being con sensor y estrategia de costos
         being = Being(AllDirectionsSensor())
-        
+
         monkey = CostStrategyFactory.create(BeingType.MONKEY)
         octopus = CostStrategyFactory.create(BeingType.OCTOPUS)
         human = CostStrategyFactory.create(BeingType.HUMAN)
-        
+
         # Terrenos a probar
         terrains = [
             TerrainType.LAND,
@@ -499,20 +501,23 @@ class Application:
             TerrainType.FOREST,
             TerrainType.MOUNTAIN,
         ]
-        
+
         print(f"{'Terreno':<12} | {'Monkey':<8} | {'Octopus':<8} | {'Human':<8}")
         print("-" * 50)
-        
+
         for terrain in terrains:
             monkey_cost = monkey.get_cost(terrain)
             octopus_cost = octopus.get_cost(terrain)
             human_cost = human.get_cost(terrain)
-            
+
             # Formatear infinito como "N/A"
-            m_str = "N/A" if monkey_cost == float('inf') else str(int(monkey_cost))
-            o_str = "N/A" if octopus_cost == float('inf') else str(int(octopus_cost))
-            h_str = "N/A" if human_cost == float('inf') else str(int(human_cost))
-            
+            m_str = "N/A" if monkey_cost == float(
+                'inf') else str(int(monkey_cost))
+            o_str = "N/A" if octopus_cost == float(
+                'inf') else str(int(octopus_cost))
+            h_str = "N/A" if human_cost == float(
+                'inf') else str(int(human_cost))
+
             print(f"{terrain.name:<12} | {m_str:<8} | {o_str:<8} | {h_str:<8}")
 
         # Establecer estrategia de costos si es un tipo conocido
@@ -524,21 +529,101 @@ class Application:
                 f"Tipo de entidad '{entity_type}' no tiene costos definidos, usando costos por defecto")
             cost_strategy = None
 
+        self.astar_viz_state.clear()
+
         astar = AStarSearch(
             heuristic_func=manhattan_distance,
             cost_strategy=cost_strategy,
             being=being,
-            use_fog_of_war=True
+            use_fog_of_war=True,
+            viz_state=self.astar_viz_state
         )
+
+        print(
+            f"\nEjecutando A* desde I={self._format_position(start_pos)} hasta M={self._format_position(goal_pos)}...")
+
         # Ejecutar A* con fog of war
         result = astar.search(
             self.current_map, start_pos, goal_pos)
 
         if result.success:
+            print("  Camino encontrado")
+            print(f"  Costo total: {result.path_cost:.1f}")
+            print(f"  Longitud: {len(result.solution_path)} pasos")
+            print(f"  Nodos expandidos: {result.nodes_expanded}")
+
+            # Renderizar árbol con costos
             tree_output = self.tree_console_renderer.render_all_trees(result)
+            print("\n" + tree_output)
+            tree_output = self._render_astar_tree(result, start_pos, goal_pos)
             print("\n" + tree_output)
         else:
             print("No se encontró camino")
+
+    def _format_position(self, position: tuple) -> str:
+        """Formatea una posición en formato humano (4B)."""
+        row, col = position
+        return f"({row+1},{chr(ord('A')+col)})"
+
+    def _render_astar_tree(self, result, start_pos, goal_pos):
+        """Renderiza el árbol de A* con notación de costos."""
+        # Formatear encabezado
+        start_label = self._format_position(start_pos)
+        goal_label = self._format_position(goal_pos)
+
+        output = []
+        output.append("\n" + "="*70)
+        output.append(f"ÁRBOL A* - Desde I={start_label} hasta M={goal_label}")
+        output.append("="*70)
+        output.append("")
+        output.append("Notación: (posición) [d(A,M), c(I,A), h(A,I,M)]")
+        output.append("  d(A,M) = distancia heurística del nodo A a la meta M")
+        output.append(
+            "  c(I,A) = costo acumulado desde el inicio I hasta el nodo A")
+        output.append(
+            "  h(A,I,M) = costo total estimado (función de evaluación f)")
+        output.append("")
+
+        # Renderizar árbol con costos
+        output.append(self._render_node_with_costs(
+            result.root_node, "", True, goal_pos))
+
+        output.append("\n" + "="*70)
+
+        return "\n".join(output)
+
+    def _render_node_with_costs(self, node, prefix, is_last, goal_pos, max_depth=100):
+        """Renderiza un nodo del árbol con sus costos."""
+        if node.depth > max_depth:
+            return ""
+
+        lines = []
+
+        # Símbolo de rama
+        if node.depth == 0:
+            branch = ""
+        else:
+            branch = "└──" if is_last else "├──"
+
+        # Formatear nodo
+        pos_str = self._format_position(node.position)
+        costs_str = f"[d={node.h_cost:.1f}, c={node.g_cost:.1f}, h={node.f_cost:.1f}]"
+
+        lines.append(f"{prefix}{branch} {pos_str} {costs_str}")
+
+        # Renderizar hijos
+        if node.children:
+            child_prefix = prefix
+            if node.depth > 0:
+                child_prefix += "    " if is_last else "│   "
+
+            for i, child in enumerate(node.children):
+                is_last_child = (i == len(node.children) - 1)
+                lines.append(self._render_node_with_costs(
+                    child, child_prefix, is_last_child, goal_pos, max_depth
+                ))
+
+        return "\n".join(lines)
 
     def _on_search_complete(self, result, algorithm_type) -> None:
         """Maneja el evento de búsqueda completada."""
@@ -655,7 +740,7 @@ class Application:
     def _render(self) -> None:
         """Renderiza un frame."""
         if self.current_map and self.map_renderer:
-            self.map_renderer.render_map(self.current_map, self.viz_state)
+            self.map_renderer.render_map(self.current_map, self.viz_state, self.astar_viz_state)
 
         if self.current_agent:
             self.current_agent.perceive(self.current_map)

@@ -3,6 +3,7 @@ from typing import Tuple, Optional
 from src.core.map import Map
 
 from src.app.services.visualization_state import VisualizationState
+from src.app.services.astar_visualization_state import AStarVisualizationState
 
 from src.app.config.config_manager import ConfigManager, DisplayConfig
 
@@ -13,6 +14,7 @@ from .grid_renderer import GridRenderer
 from .terrain_renderer import TerrainRenderer
 from .marks_renderer import MarksRenderer
 from .search_renderer import SearchRenderer
+from .astar_renderer import AStarRenderer
 
 
 class MapRenderer:
@@ -44,8 +46,9 @@ class MapRenderer:
 
         self.marks_renderer = MarksRenderer(graphics_engine, config_manager)
         self.search_renderer = SearchRenderer(graphics_engine, config_manager)
+        self.astar_renderer = AStarRenderer(graphics_engine, config_manager)
 
-    def render_map(self, map_obj: Map, viz_state: Optional[VisualizationState] = None) -> None:
+    def render_map(self, map_obj: Map, viz_state: Optional[VisualizationState] = None, astar_viz_state: Optional['AStarVisualizationState'] = None) -> None:
         """
         Renderizar completamente un mapa en la pantalla.
 
@@ -60,7 +63,10 @@ class MapRenderer:
 
         if viz_state:
             self.search_renderer.render(map_obj, viz_state)
-
+            
+        if astar_viz_state:
+            self.astar_renderer.render(map_obj, astar_viz_state)
+            
         self.marks_renderer.render(map_obj)
 
         self.gfx.present()

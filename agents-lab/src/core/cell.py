@@ -52,6 +52,8 @@ class CellMark(Flag):
     VISITED = 4      # V: Visitado
     DECISION = 8     # O: Punto de decisión
     FINAL = 16       # F: Punto final
+    OPEN = 32        # O: En open set (A*)
+    CLOSED = 64      # X: En closed set (A*)
 
 
 class Cell:
@@ -191,7 +193,9 @@ class Cell:
             CellMark.CURRENT: 'X',
             CellMark.VISITED: 'V',
             CellMark.DECISION: 'O',
-            CellMark.FINAL: 'F'
+            CellMark.FINAL: 'F',
+            CellMark.OPEN: 'O()',
+            CellMark.CLOSED: 'X()'
         }
 
         symbols = [mark_symbols[mark]
