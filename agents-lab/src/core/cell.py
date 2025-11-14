@@ -1,5 +1,8 @@
 from enum import Enum, Flag
-from typing import Set
+from typing import Set, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .cost_strategy import CostStrategy
 
 
 class TerrainType(Enum):
@@ -196,6 +199,18 @@ class Cell:
 
         return ','.join(symbols)
 
+    def get_movement_cost(self, cost_strategy: 'CostStrategy') -> float:
+        """
+        Obtiene el costo de movimiento para esta celda según una estrategia.
+        
+        Args:
+            cost_strategy: Estrategia de costos a aplicar
+            
+        Returns:
+            Costo de movimiento para esta celda
+        """
+        return cost_strategy.get_cost(self.terrain)
+    
     def __eq__(self, other) -> bool:
         """Verifica igualdad con otra celda."""
         if not isinstance(other, Cell):

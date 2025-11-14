@@ -2,6 +2,11 @@ from typing import Optional, Tuple, Dict
 from .sensors import Sensor, Direction
 from .map import Map
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .cost_strategy import CostStrategy
+    from .cell import TerrainType
 
 class Being:
     """
@@ -88,6 +93,30 @@ class Being:
         """Reinicia el estado del ser."""
         self.position = None
         self.direction = Direction.UP
+
+    def set_cost_strategy(self, cost_strategy: 'CostStrategy') -> None:
+        """
+        Establece la estrategia de costos del ser.
+
+        Args:
+            cost_strategy: Estrategia de costos a usar
+        """
+        self.cost_strategy = cost_strategy
+
+    def get_movement_cost(self, terrain: 'TerrainType') -> float:
+        """
+        Obtiene el costo de moverse a través de un terreno.
+
+        Args:
+            terrain: Tipo de terreno
+
+        Returns:
+            Costo de movimiento
+        """
+        if hasattr(self, 'cost_strategy') and self.cost_strategy:
+            return self.cost_strategy.get_cost(terrain)
+        # Costo por defecto si no hay estrategia
+        return 1.0 if terrain != TerrainType.WALL else float('inf')
 
     def __str__(self) -> str:
         """Representación string del ser."""

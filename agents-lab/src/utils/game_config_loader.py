@@ -138,6 +138,12 @@ class GameConfigLoader:
                 f"Archivo de mapa no encontrado: {map_path} (especificado en {config_path})"
             )
 
+        if 'entity_config' in data:
+            if not isinstance(data['entity_config'], dict):
+                raise GameConfigLoaderError(
+                    f"'entity_config' debe ser un diccionario en {config_path}"
+                )
+
     def _parse_human_coordinate(self, coord: str) -> Tuple[int, int]:
         """
         Convierte una coordenada en formato humano a índices (row, col).
